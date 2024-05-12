@@ -76,6 +76,8 @@ class Portfolio(Report):
                 "Portfolio Percentage",
             ]
         ]
+        # balances_pdf["Total Value (USDT)"] = "XXXXX"
+        # balances_pdf["Balance"] = "XXXXX"
         logger.info(f"Writing report...")
 
         output_dir = Path("reports/portfolio")
