@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 
 [project]
-name = "crypto-exchanges-portfolio-reports"
+name = "crypto-exchanges-reports"
 version = "0.1.0"
 description = "Centralized reports for your crypto assets in various exchanges"
 readme = "README.md"
@@ -26,7 +26,7 @@ dependencies = [
   "gate-api==4.70.0"
 ]
 [project.urls]
-"Homepage" = "https://github.com/AlexRivas502/crypto-exchanges-portfolio-reports"
+"Homepage" = "https://github.com/AlexRivas502/crypto-exchanges-reports"
 
 # The following would provide a command line executable called `sample`
 # which executes the function `main` from this package when invoked.
