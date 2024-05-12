@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "crypto-exchanges-reports"
-version = "0.1.0"
+version = "0.1.1"
 description = "Centralized reports for your crypto assets in various exchanges"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -19,7 +19,7 @@ maintainers = [
 ]
 dependencies = [
   "click==8.1.7",
-  "pandas==2.2.0",
+  "pandas>=2.2.2",
   "structlog==24.1.0",
   "binance-connector==3.7.0",
   "pybit==5.7.0",
