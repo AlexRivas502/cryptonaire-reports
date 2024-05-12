@@ -1,7 +1,7 @@
 from typing import Tuple, List
 
 import structlog
-from crypto_exchanges_portfolio_reports.exchanges.exchange import Exchange
+from crypto_exchanges_reports.exchanges.exchange import Exchange
 from gate_api import ApiClient, Configuration
 from gate_api.api.spot_api import SpotApi
 from gate_api.models.spot_account import SpotAccount
@@ -12,19 +12,21 @@ logger = structlog.get_logger()
 API_URL = "https://api.gateio.ws/api/v4"
 
 
-class GateIO(Exchange):
+class Gate(Exchange):
 
     def __init__(self) -> None:
-        super().__init__("GateIO")
+        super().__init__("Gate")
+        if not self.active:
+            return
         config = Configuration(key=self._api_key, secret=self._secret_key, host=API_URL)
         self.spot_api = SpotApi(api_client=ApiClient(config))
 
     @property
     def name(self) -> str:
-        return "GateIO"
+        return "Gate"
 
     def _get_price(self, coin_ticker: str, wallet_type: str) -> float:
-        logger.debug(f"[GATE IO][{wallet_type}] Retrieving {coin_ticker} last price...")
+        logger.debug(f"[GATE][{wallet_type}] Retrieving {coin_ticker} last price...")
         if coin_ticker in ["USDT", "USDC", "USD"]:
             return 1.0
         try:
@@ -34,7 +36,7 @@ class GateIO(Exchange):
             curr_price_usdt = float(ticker.last)
         except:
             logger.warning(
-                f"[GATE IO][{wallet_type}] {coin_ticker} average price not found. Using $0"
+                f"[GATE][{wallet_type}] {coin_ticker} average price not found. Using $0"
             )
             curr_price_usdt = 0.0
         return curr_price_usdt

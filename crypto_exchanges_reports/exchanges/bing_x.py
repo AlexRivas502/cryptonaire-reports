@@ -6,7 +6,7 @@ import time
 
 from hashlib import sha256
 from typing import Tuple, List, Dict, Optional
-from crypto_exchanges_portfolio_reports.exchanges.exchange import Exchange
+from crypto_exchanges_reports.exchanges.exchange import Exchange
 
 logger = structlog.get_logger()
 
@@ -17,6 +17,8 @@ class BingX(Exchange):
 
     def __init__(self) -> None:
         super().__init__("BingX")
+        if not self.active:
+            return
 
     @property
     def name(self) -> str:

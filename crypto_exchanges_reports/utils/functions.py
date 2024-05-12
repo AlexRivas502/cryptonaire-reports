@@ -1,21 +1,15 @@
 from typing import Set
 
 import structlog
+from crypto_exchanges_reports.utils.exchange_mappings import EXCHANGE_MAP
 
 logger = structlog.get_logger()
-
-SUPPORTED_EXCHANGES = {
-    "Binance": ["binance"],
-    "BingX": ["bing-x", "bingx", "bing_x"],
-    "ByBit": ["bybit", "by-bit"],
-    "GateIO": ["gate-io", "gateio", "gate_io"],
-}
 
 
 def parse_exchanges(exchanges_input: str) -> Set[str]:
     exchange_set: Set = {x.lower() for x in exchanges_input.split(",")}
     flat_list = ["all"]
-    [flat_list.extend(x) for x in SUPPORTED_EXCHANGES.values()]
+    [flat_list.extend(x) for x in EXCHANGE_MAP.values()]
     supported_exchanges_codes = set(flat_list)
     if not exchange_set <= supported_exchanges_codes:
         not_supported = []

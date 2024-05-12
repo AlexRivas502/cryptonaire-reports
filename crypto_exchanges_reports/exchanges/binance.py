@@ -2,7 +2,7 @@ import structlog
 
 from typing import Tuple, List
 from binance.spot import Spot
-from crypto_exchanges_portfolio_reports.exchanges.exchange import Exchange
+from crypto_exchanges_reports.exchanges.exchange import Exchange
 
 logger = structlog.get_logger()
 
@@ -11,6 +11,8 @@ class Binance(Exchange):
 
     def __init__(self) -> None:
         super().__init__("Binance")
+        if not self.active:
+            return
         self.client = Spot(self._api_key, self._secret_key)
 
     @property

@@ -1,8 +1,8 @@
 import click
 
-from crypto_exchanges_portfolio_reports.reports.portfolio import Portfolio
-from crypto_exchanges_portfolio_reports.utils.logger import LoggerConfig
-from crypto_exchanges_portfolio_reports.utils.functions import parse_exchanges
+from crypto_exchanges_reports.reports.portfolio import Portfolio
+from crypto_exchanges_reports.utils.logger import LoggerConfig
+from crypto_exchanges_reports.utils.functions import parse_exchanges
 
 
 @click.group()

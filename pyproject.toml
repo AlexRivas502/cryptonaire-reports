@@ -31,7 +31,7 @@ dependencies = [
 # The following would provide a command line executable called `sample`
 # which executes the function `main` from this package when invoked.
 [project.scripts]
-crypto-report = "crypto_exchanges_portfolio_reports.cli:crypto_report"
+crypto-report = "crypto_exchanges_reports.cli:crypto_report"
 
 [tool.setuptools]
 include-package-data = true

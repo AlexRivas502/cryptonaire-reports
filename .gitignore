@@ -160,8 +160,8 @@ cython_debug/
 #.idea/
 
 # File outputs
-.csv
-.tsv
-.xls
-.xlsx
-.config
+*.csv
+*.tsv
+*.xls
+*.xlsx
+*.config

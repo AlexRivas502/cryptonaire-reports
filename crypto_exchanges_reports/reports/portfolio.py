@@ -4,12 +4,7 @@ from pathlib import Path
 
 import structlog
 import pandas as pd
-from crypto_exchanges_portfolio_reports.exchanges.binance import Binance
-from crypto_exchanges_portfolio_reports.exchanges.bing_x import BingX
-from crypto_exchanges_portfolio_reports.exchanges.bybit import ByBit
-from crypto_exchanges_portfolio_reports.exchanges.gate_io import GateIO
-from crypto_exchanges_portfolio_reports.exchanges.exchange import Exchange
-from crypto_exchanges_portfolio_reports.reports.report import Report
+from crypto_exchanges_reports.reports.report import Report
 
 pd.options.display.float_format = "{:.10f}".format
 
@@ -19,33 +14,20 @@ logger = structlog.get_logger()
 class Portfolio(Report):
 
     def __init__(self, exchanges: List[str] = ["all"]) -> None:
-        super().__init__()
-        self.exchanges: List[Exchange] = []
-        logger.info(
-            f"Looking for API keys of the following exchanges: {','.join(exchanges)}"
-        )
-        if "all" in exchanges:
-            self.exchanges.append(Binance())
-            self.exchanges.append(BingX())
-            self.exchanges.append(ByBit())
-            self.exchanges.append(GateIO())
-        elif "binance" in exchanges:
-            self.exchanges.append(Binance())
-        elif "bing-x" in exchanges or "bingx" in exchanges or "bing_x" in exchanges:
-            self.exchanges.append(BingX())
-        elif "bybit" in exchanges or "by-bit" in exchanges:
-            self.exchanges.append(ByBit())
-        elif "gate-io" in exchanges or "gateio" in exchanges or "gate_io" in exchanges:
-            self.exchanges.append(GateIO())
+        super().__init__(exchanges)
 
     def report(self):
         balances = []
         for exchange in self.exchanges:
             exchange_balance = exchange.get_balances()
             if not exchange_balance:
-                logger.debug(f"Balance data not found for {exchange.name}. Skipping.")
+                logger.debug(
+                    f"[{exchange.name.upper()}] Balance data not found. Skipping."
+                )
                 continue
-            logger.info(f"Balance data found for {exchange.name}")
+            logger.info(
+                f"[{exchange.name.upper()}] Data collection completed successfully"
+            )
             balances.extend([(exchange.name, *balance) for balance in exchange_balance])
         balances_pdf = pd.DataFrame(
             balances,
@@ -68,17 +50,22 @@ class Portfolio(Report):
             )
             return pd.Series(
                 result,
-                index=["Exchange(s)", "Balance", "Current Price", "Total Value (USDT)"],
+                index=[
+                    "Exchange(s)",
+                    "Balance",
+                    "Current Price",
+                    "Total Value (USDT)",
+                    "Percentage",
+                ],
             )
 
-        logger.info(f"Groupping assets by coin...")
-        balances_pdf = (
-            balances_pdf.groupby(by=["Ticker Symbol"])
-            .apply(combine_balances)
-            .reset_index()
+        balances_pdf = balances_pdf.groupby(by=["Ticker Symbol"]).apply(
+            combine_balances
         )
-        # Remove duplicate exchanges
-        # balances_pdf["Exchange(s)"]=balances_pdf["Exchange(s)"].str.split("|").map(set).str.join("|")
+        balances_pdf["Portfolio Percentage"] = balances_pdf[
+            ["Total Value (USDT)"]
+        ].apply(lambda x: x / x.sum())
+        balances_pdf.reset_index(inplace=True)
         balances_pdf = balances_pdf[
             [
                 "Exchange(s)",
@@ -86,6 +73,7 @@ class Portfolio(Report):
                 "Balance",
                 "Current Price",
                 "Total Value (USDT)",
+                "Portfolio Percentage",
             ]
         ]
         logger.info(f"Writing report...")

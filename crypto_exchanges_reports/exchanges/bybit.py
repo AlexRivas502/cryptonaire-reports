@@ -1,7 +1,7 @@
 import structlog
 
 from typing import Tuple, List
-from crypto_exchanges_portfolio_reports.exchanges.exchange import Exchange
+from crypto_exchanges_reports.exchanges.exchange import Exchange
 from pybit.unified_trading import HTTP
 
 logger = structlog.get_logger()
@@ -11,6 +11,8 @@ class ByBit(Exchange):
 
     def __init__(self) -> None:
         super().__init__("ByBit")
+        if not self.active:
+            return
         self.client = HTTP(
             testnet=False, api_key=self._api_key, api_secret=self._secret_key
         )
