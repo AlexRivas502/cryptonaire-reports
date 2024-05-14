@@ -25,7 +25,7 @@ SECRET_KEY = <your secret key>
 API_KEY = <your api key>
 SECRET_KEY = <your secret key>
 
-[GateIO]
+[Gate]
 API_KEY = <your api key>
 SECRET_KEY = <your secret key>
 ```
