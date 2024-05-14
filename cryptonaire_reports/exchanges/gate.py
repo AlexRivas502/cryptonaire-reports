@@ -1,7 +1,7 @@
 from typing import Tuple, List
 
 import structlog
-from crypto_exchanges_reports.exchanges.exchange import Exchange
+from cryptonaire_reports.exchanges.exchange import Exchange
 from gate_api import ApiClient, Configuration
 from gate_api.api.spot_api import SpotApi
 from gate_api.models.spot_account import SpotAccount

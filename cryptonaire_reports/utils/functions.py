@@ -1,7 +1,7 @@
 from typing import Set
 
 import structlog
-from crypto_exchanges_reports.utils.exchange_mappings import EXCHANGE_MAP
+from cryptonaire_reports.utils.exchange_mappings import EXCHANGE_MAP
 
 logger = structlog.get_logger()
 

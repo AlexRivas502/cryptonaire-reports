@@ -6,7 +6,7 @@ import time
 
 from hashlib import sha256
 from typing import Tuple, List, Dict, Optional
-from crypto_exchanges_reports.exchanges.exchange import Exchange
+from cryptonaire_reports.exchanges.exchange import Exchange
 
 logger = structlog.get_logger()
 

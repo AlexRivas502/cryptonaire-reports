@@ -2,7 +2,7 @@ import structlog
 
 from typing import Tuple, List
 from binance.spot import Spot
-from crypto_exchanges_reports.exchanges.exchange import Exchange
+from cryptonaire_reports.exchanges.exchange import Exchange
 
 logger = structlog.get_logger()
 

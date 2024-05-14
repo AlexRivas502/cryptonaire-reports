@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 
 [project]
-name = "crypto-exchanges-reports"
-version = "0.1.2"
-description = "Centralized reports for your crypto assets in various exchanges"
+name = "cryptonaire-reports"
+version = "0.1.0.alpha1"
+description = "Centralized reports for your crypto assets in multiple exchanges and wallets"
 readme = "README.md"
 requires-python = ">=3.12"
 license = {file = "LICENSE"}
-keywords = ["crypto", "exchange", "binance", "bingx", "coinbase", "bybit"]
+keywords = ["crypto", "exchange", "binance", "bingx", "coinbase", "bybit", "gate", "metamask", "portfolio", "balances"]
 authors = [
   {name = "Alejandro Rivas Rojas", email = "alexrivas502@gmail.com" }
 ]
@@ -19,19 +19,19 @@ maintainers = [
 ]
 dependencies = [
   "click==8.1.7",
-  "pandas>=2.2.2",
+  "pandas>=2.2.0",
   "structlog==24.1.0",
   "binance-connector==3.7.0",
   "pybit==5.7.0",
   "gate-api==4.70.0"
 ]
 [project.urls]
-"Homepage" = "https://github.com/AlexRivas502/crypto-exchanges-reports"
+"Homepage" = "https://github.com/AlexRivas502/cryptonaire-reports"
 
 # The following would provide a command line executable called `sample`
 # which executes the function `main` from this package when invoked.
 [project.scripts]
-crypto-report = "crypto_exchanges_reports.cli:crypto_report"
+crypto-report = "cryptonaire_reports.cli:crypto_report"
 
 [tool.setuptools]
 include-package-data = true
@@ -61,4 +61,5 @@ skip = [
   ".conda",
   "venv",
   "dist",
+  "scripts"
 ]

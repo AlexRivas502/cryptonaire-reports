@@ -4,7 +4,7 @@ from pathlib import Path
 
 import structlog
 import pandas as pd
-from crypto_exchanges_reports.reports.report import Report
+from cryptonaire_reports.reports.report import Report
 
 pd.options.display.float_format = "{:.10f}".format
 

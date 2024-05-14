@@ -1,7 +1,7 @@
 import structlog
 
 from typing import Tuple, List
-from crypto_exchanges_reports.exchanges.exchange import Exchange
+from cryptonaire_reports.exchanges.exchange import Exchange
 from pybit.unified_trading import HTTP
 
 logger = structlog.get_logger()

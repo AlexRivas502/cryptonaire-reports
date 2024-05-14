@@ -1,11 +1,11 @@
-# Crypto Exchanges Portfolio Reports
-Generates reports based on your crypto assets across different exchanges (Currently supports Binance, BingX, GateIO and ByBit)
+# Cryptonaire Reports
+Generates reports based on your crypto assets across different exchanges and wallets (Currently supports Binance, BingX, GateIO and ByBit)
 
 ## Installation
 1. Clone the project
 2. Make sure that you are using at least Python 3.11. Then run
    ```bash
-   pip install crypto-exchanges-reports
+   pip install cryptonaire-reports
    ```
 3. You can access the command by running `crypto-report <REPORT TYPE>`. See third section for the supported reports.
 
