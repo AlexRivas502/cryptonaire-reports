@@ -1,0 +1,1 @@
+crypto-report portfolio --exchange all --debug
