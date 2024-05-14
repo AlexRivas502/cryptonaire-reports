@@ -11,7 +11,7 @@ class Exchange:
 
     def __init__(self, exchange_name: str) -> None:
         config = ConfigParser()
-        config.read("exchange_api_keys.config")
+        config.read("api_keys.config")
         if exchange_name not in config:
             logger.warning(f"No keys found for {exchange_name}, skipping exchange")
             self.active = False
