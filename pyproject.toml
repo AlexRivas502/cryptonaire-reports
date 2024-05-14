@@ -61,5 +61,6 @@ skip = [
   ".conda",
   "venv",
   "dist",
-  "scripts"
+  "scripts",
+  "exchange_api_keys_test_template.config"
 ]
