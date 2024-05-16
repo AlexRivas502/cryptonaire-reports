@@ -2,6 +2,7 @@ import abc
 from typing import List
 
 import structlog
+from cryptonaire_reports.other.manual_balances import ManualBalances
 from cryptonaire_reports.exchanges.exchange import Exchange
 from cryptonaire_reports.networks.network import Network
 from cryptonaire_reports.utils.mappings import EXCHANGE_MAP
@@ -14,14 +15,20 @@ logger = structlog.get_logger()
 class Report:
 
     def __init__(
-        self, exchanges: List[str] = ["all"], networks: List[str] = ["all"]
+        self,
+        exchanges: List[str] = ["all"],
+        networks: List[str] = ["all"],
+        include_manual: bool = False,
     ) -> None:
         self.exchanges: List[Exchange] = []
         self.networks: List[Network] = []
+        self.manual: ManualBalances = None
         if exchanges:
             self.initialize_exchanges(exchanges)
         if networks:
             self.initialize_networks(networks)
+        if include_manual:
+            self.manual = ManualBalances()
 
     def initialize_exchanges(self, exchanges: List[str]) -> None:
         logger.info(

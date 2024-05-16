@@ -15,9 +15,12 @@ logger = structlog.get_logger()
 class Portfolio(Report):
 
     def __init__(
-        self, exchanges: List[str] = ["all"], networks: List[str] = ["all"]
+        self,
+        exchanges: List[str] = ["all"],
+        networks: List[str] = ["all"],
+        include_manual: bool = False,
     ) -> None:
-        super().__init__(exchanges, networks)
+        super().__init__(exchanges, networks, include_manual)
         self.coin_market_cap = CoinMarketCap()
 
     def get_balances_from_exchanges(self) -> List[Tuple]:
@@ -65,6 +68,13 @@ class Portfolio(Report):
                 f"[{network.name.upper()}] Data collection completed successfully"
             )
             balances.extend([(network.name, *balance) for balance in network_balance])
+        return balances
+
+    def get_balances_from_manual_file(self) -> List[Tuple]:
+        if not self.manual:
+            return []
+        balances = self.manual.get_balances()
+        f"[{self.manual.name.upper()}] Data collection completed successfully"
         return balances
 
     def extract_additional_coin_info(self, symbols: Set[str]) -> Dict[str, Dict]:
@@ -120,7 +130,8 @@ class Portfolio(Report):
         # Extract all the balances from the exchanges and networks
         exchange_balances = self.get_balances_from_exchanges()
         network_balances = self.get_balances_from_networks()
-        balances = exchange_balances + network_balances
+        manual_balances = self.get_balances_from_manual_file()
+        balances = exchange_balances + network_balances + manual_balances
         balances_pdf = pd.DataFrame(
             balances,
             columns=["source", "symbol", "balance"],

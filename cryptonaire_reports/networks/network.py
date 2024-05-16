@@ -17,9 +17,9 @@ class Network:
                 f"Network configuration not found. If you want to retrieve balances "
                 f"from {network}, you need to add the following section to your config "
                 f"file: \n"
-                f"\t\t\t\t[Networks]"
-                f"\t\t\t\t{network} = <Your address>"
-                f"\t\t\t\t            <Your second address> ..."
+                f"\t\t\t\t[Networks]\n"
+                f"\t\t\t\t{network} = <Your address>\n"
+                f"\t\t\t\t            <Your second address> ...\n"
             )
             self.active = False
             return
