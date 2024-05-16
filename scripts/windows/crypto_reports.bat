@@ -1,3 +1,3 @@
 @ECHO OFF
-crypto-report portfolio --exchange all --networks all
+crypto-report portfolio --exchanges all --networks all
 PAUSE
