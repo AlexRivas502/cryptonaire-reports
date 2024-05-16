@@ -1,4 +1,4 @@
-from typing import List, Dict, Set
+from typing import List, Dict, Set, Tuple
 from datetime import datetime
 from pathlib import Path
 
@@ -14,11 +14,13 @@ logger = structlog.get_logger()
 
 class Portfolio(Report):
 
-    def __init__(self, exchanges: List[str] = ["all"]) -> None:
-        super().__init__(exchanges)
+    def __init__(
+        self, exchanges: List[str] = ["all"], networks: List[str] = ["all"]
+    ) -> None:
+        super().__init__(exchanges, networks)
         self.coin_market_cap = CoinMarketCap()
 
-    def get_balances_from_exchanges(self) -> pd.DataFrame:
+    def get_balances_from_exchanges(self) -> List[Tuple]:
         """Gets the balances from all the configured exchanges.
         If you've got one coin across different exchanges, there will be one row per
         exchange. If you've got one coin across different wallets within an exchange
@@ -40,11 +42,30 @@ class Portfolio(Report):
                 f"[{exchange.name.upper()}] Data collection completed successfully"
             )
             balances.extend([(exchange.name, *balance) for balance in exchange_balance])
-        balances_pdf = pd.DataFrame(
-            balances,
-            columns=["exchange", "symbol", "balance"],
-        )
-        return balances_pdf
+        return balances
+
+    def get_balances_from_networks(self) -> List[Tuple]:
+        """Gets the balances from all the configured networks.
+        If you've got one coin across different networks, there will be one row per
+        network.
+
+        Returns:
+            pd.DataFrame: Pandas dataframe with the following columns:
+                network, symbol, balance
+        """
+        balances = []
+        for network in self.networks:
+            network_balance = network.get_balances()
+            if not network_balance:
+                logger.debug(
+                    f"[{network.name.upper()}] Balance data not found. Skipping."
+                )
+                continue
+            logger.info(
+                f"[{network.name.upper()}] Data collection completed successfully"
+            )
+            balances.extend([(network.name, *balance) for balance in network_balance])
+        return balances
 
     def extract_additional_coin_info(self, symbols: Set[str]) -> Dict[str, Dict]:
         """Given a list of symbols, uses the CoinMarketCap API to extract additional
@@ -71,17 +92,17 @@ class Portfolio(Report):
     @staticmethod
     def combine_balances(row: pd.DataFrame) -> pd.Series:
         result = {}
-        result["exchanges"] = "|".join(set(row["exchange"]))
+        result["source"] = "|".join(set(row["source"]))
         result["balance"] = row["balance"].sum()
         return pd.Series(
             result,
-            index=["exchanges", "balance"],
+            index=["source", "balance"],
         )
 
     @staticmethod
     def get_rename_map() -> Dict[str, str]:
         return {
-            "exchanges": "Exchange(s) / Network(s)",
+            "source": "Exchange(s) / Network(s)",
             "symbol": "Symbol",
             "name": "Full Name",
             "rank": "Coin Rank",
@@ -97,8 +118,13 @@ class Portfolio(Report):
 
     def report(self):
         # Extract all the balances from the exchanges and networks
-        exchange_balances_pdf = self.get_balances_from_exchanges()
-        balances_pdf = exchange_balances_pdf
+        exchange_balances = self.get_balances_from_exchanges()
+        network_balances = self.get_balances_from_networks()
+        balances = exchange_balances + network_balances
+        balances_pdf = pd.DataFrame(
+            balances,
+            columns=["source", "symbol", "balance"],
+        )
 
         # Group by ticker symbol and sum the balances
         groupped_balances_pdf = balances_pdf.groupby(by=["symbol"]).apply(

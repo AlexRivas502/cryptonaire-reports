@@ -15,9 +15,11 @@ class CoinMarketCap(metaclass=Singleton):
 
     def __init__(self) -> None:
         config = ConfigParser()
-        config.read("api_keys.config")
+        config.read("cryptonaire_reports.config")
         if "CoinMarketCap" not in config:
-            logger.error(f"CoinMarketCap configuration missing in api_keys.config")
+            logger.error(
+                f"CoinMarketCap configuration missing in cryptonaire_reports.config"
+            )
             exit(1)
         self.api = CoinMarketCapAPI(api_key=config.get("CoinMarketCap", "API_KEY"))
 

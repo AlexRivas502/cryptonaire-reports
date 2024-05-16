@@ -64,7 +64,7 @@ class BingX(Exchange, metaclass=Singleton):
 
     def get_wealth_balances(self) -> List[Tuple[str, float, float]]:
         logger.warning(
-            f"[{self.name.upper()}]BingX doesn't provide wealth balances yet. That information "
+            f"[{self.name.upper()}] BingX doesn't provide wealth balances yet. That information "
             "must be entered manually until the API enables wealth balances."
         )
         return []
