@@ -1,5 +1,5 @@
 import abc
-from typing import Tuple
+from typing import Tuple, List
 from configparser import ConfigParser
 
 import structlog

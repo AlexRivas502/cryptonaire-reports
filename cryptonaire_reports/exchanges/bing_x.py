@@ -7,13 +7,15 @@ import time
 from hashlib import sha256
 from typing import Tuple, List, Dict, Optional
 from cryptonaire_reports.exchanges.exchange import Exchange
+from cryptonaire_reports.utils.singleton import Singleton
+from cryptonaire_reports.utils.symbol_corrector import symbol_corrector
 
 logger = structlog.get_logger()
 
 API_URL = "https://open-api.bingx.com"
 
 
-class BingX(Exchange):
+class BingX(Exchange, metaclass=Singleton):
 
     def __init__(self) -> None:
         super().__init__("BingX")
@@ -45,42 +47,24 @@ class BingX(Exchange):
         response = requests.request(method, url, headers=headers, data=payload)
         return json.loads(response.text)
 
-    def _get_price(self, coin_ticker: str, wallet_type: str) -> float:
-        logger.debug(f"[BING-X][{wallet_type}] Retrieving {coin_ticker} last price...")
-        if coin_ticker in ["USDT", "USDC", "USD"]:
-            return 1.0
-        try:
-            curr_price_usdt = self._api_request(
-                endpoint="/openApi/spot/v1/ticker/24hr",
-                params={"symbol": f"{coin_ticker}-USDT"},
-            )["data"][0]["lastPrice"]
-        except:
-            logger.warning(
-                f"[BING-X][{wallet_type}] {coin_ticker} average price not found. Using $0"
-            )
-            curr_price_usdt = 0.0
-        return curr_price_usdt
-
-    def get_spot_balances(self) -> List[Tuple[str, float, float, float]]:
+    def get_spot_balances(self) -> List[Tuple[str, float]]:
+        logger.info(f"[{self.name.upper()}] Extracting balances from Spot account...")
         spot_balances = []
         spot_acc_balance = self._api_request(
             endpoint="/openApi/spot/v1/account/balance"
         )
         for coin_asset in spot_acc_balance["data"]["balances"]:
-            coin_ticker = coin_asset["asset"]
+            coin_ticker = symbol_corrector(coin_asset["asset"])
             balance = float(coin_asset["free"]) + float(coin_asset["locked"])
             if not balance > 0:
                 continue
-            curr_price_usdt = self._get_price(
-                coin_ticker=coin_ticker, wallet_type="SPOT"
-            )
-            total = balance * curr_price_usdt
-            spot_balances.append((coin_ticker, balance, curr_price_usdt, total))
+            spot_balances.append((coin_ticker, balance))
+        logger.debug(f"[{self.name.upper()}] Spot balances: \n{spot_balances}")
         return spot_balances
 
     def get_wealth_balances(self) -> List[Tuple[str, float, float]]:
         logger.warning(
-            "[BING-X][WEALTH] BingX doesn't provide wealth balances. That information "
+            f"[{self.name.upper()}]BingX doesn't provide wealth balances yet. That information "
             "must be entered manually until the API enables wealth balances."
         )
         return []
@@ -89,4 +73,5 @@ class BingX(Exchange):
         balances = []
         balances.extend(self.get_spot_balances())
         balances.extend(self.get_wealth_balances())
+        logger.info(f"[{self.name.upper()}] All balances extracted successfully")
         return balances

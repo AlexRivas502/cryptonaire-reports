@@ -167,3 +167,4 @@ cython_debug/
 
 # Config files
 api_keys.config
+*.ipynb

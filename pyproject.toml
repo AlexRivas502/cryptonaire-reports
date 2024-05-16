@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cryptonaire-reports"
-version = "0.1.0.alpha1"
+version = "0.1.0.alpha2"
 description = "Centralized reports for your crypto assets in multiple exchanges and wallets"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -23,7 +23,8 @@ dependencies = [
   "structlog==24.1.0",
   "binance-connector==3.7.0",
   "pybit==5.7.0",
-  "gate-api==4.70.0"
+  "gate-api==4.70.0",
+  "python-coinmarketcap==0.5"
 ]
 [project.urls]
 "Homepage" = "https://github.com/AlexRivas502/cryptonaire-reports"
@@ -37,6 +38,10 @@ crypto-report = "cryptonaire_reports.cli:crypto_report"
 include-package-data = true
 zip-safe = true
 package-data = {"*" = ["*.yml", "*.yaml"]}
+
+[tool.setuptools.packages.find]
+include = ["cryptonaire_reports*"]
+exclude = ["scripts*", "templates*", "tests*", "*ipynb"]
 
 [tool.pytest.ini_options]
 addopts = [
@@ -62,5 +67,5 @@ skip = [
   "venv",
   "dist",
   "scripts",
-  "exchange_api_keys_test_template.config"
+  "templates"
 ]

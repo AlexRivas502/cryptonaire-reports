@@ -27,7 +27,7 @@ class Report:
                     if exchange in exchange_keys:
                         exchange_instance = exchange_class()
                         if exchange_instance.active:
-                            self.exchanges.append(exchange_class())
+                            self.exchanges.append(exchange_instance)
                         else:
                             logger.warning(
                                 f"Exchange {exchange} API keys were not found in "
