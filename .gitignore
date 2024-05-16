@@ -166,5 +166,5 @@ cython_debug/
 *.xlsx
 
 # Config files
-api_keys.config
+cryptonaire_reports.config
 *.ipynb
