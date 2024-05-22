@@ -21,7 +21,14 @@ class CoinMarketCap(metaclass=Singleton):
                 f"CoinMarketCap configuration missing in cryptonaire_reports.config"
             )
             exit(1)
-        self.api = CoinMarketCapAPI(api_key=config.get("CoinMarketCap", "API_KEY"))
+        try:
+            self.api = CoinMarketCapAPI(api_key=config.get("CoinMarketCap", "API_KEY"))
+        except:
+            logger.error(
+                f"[CoinMarketCap] Error while configuring the CoinMarketCap API. Double"
+                f"check that the API key is valid."
+            )
+            exit(1)
 
     def get_coin_info(self, coin_list: Set[str]) -> List[Dict]:
         """Given a list of coins / ticker symbols, extracts additional information
@@ -34,12 +41,15 @@ class CoinMarketCap(metaclass=Singleton):
             List[Dict]: Dictionary where the keys are the ticker symbols and the value
                 is a dictionary with all the requested information
         """
-        logger.info(
-            f"[CoinMarketCap] Extracting basic info for: {', '.join(coin_list)}"
-        )
-        coin_market_cap_map_response: Response = self.api.cryptocurrency_map(
-            symbol=",".join(coin_list)
-        )
+        try:
+            coin_market_cap_map_response: Response = self.api.cryptocurrency_map(
+                symbol=",".join(coin_list)
+            )
+        except:
+            logger.error(
+                f"[CoinMarketCap] Error while retrieving the cryptocurrency map"
+            )
+            return []
         # Results can contain duplicates. We only want to keep the first instance of
         # each symbol
         coin_info = {}
@@ -72,25 +82,31 @@ class CoinMarketCap(metaclass=Singleton):
                     f"[CoinMarketCap] API limit reached. Waiting 60 seconds to reset..."
                 )
                 time.sleep(61)
-                latest_quote = self.api.cryptocurrency_quotes_latest(
-                    id=info["id"]
-                ).data.get(str(info["id"]))
+                try:
+                    latest_quote = self.api.cryptocurrency_quotes_latest(
+                        id=info["id"]
+                    ).data.get(str(info["id"]))
+                except:
+                    logger.error(f"[CoinMarketCap] Price data not found for: {symbol}")
+                    latest_quote = None
 
             if not latest_quote:
                 logger.warning(f"[CoinMarketCap] Price data not found for: {symbol}")
-
-            coin_info[symbol]["price_usd"] = float(
-                latest_quote.get("quote").get("USD").get("price")
-            )
-            coin_info[symbol]["max_supply"] = int(latest_quote.get("max_supply") or -1)
-            coin_info[symbol]["circulating_supply"] = int(
-                latest_quote.get("circulating_supply") or -1
-            )
-            coin_info[symbol]["total_supply"] = int(
-                latest_quote.get("total_supply") or -1
-            )
-            coin_info[symbol]["market_cap"] = int(
-                latest_quote.get("quote").get("USD").get("market_cap") or -1
-            )
+            else:
+                coin_info[symbol]["price_usd"] = float(
+                    latest_quote.get("quote").get("USD").get("price")
+                )
+                coin_info[symbol]["max_supply"] = int(
+                    latest_quote.get("max_supply") or -1
+                )
+                coin_info[symbol]["circulating_supply"] = int(
+                    latest_quote.get("circulating_supply") or -1
+                )
+                coin_info[symbol]["total_supply"] = int(
+                    latest_quote.get("total_supply") or -1
+                )
+                coin_info[symbol]["market_cap"] = int(
+                    latest_quote.get("quote").get("USD").get("market_cap") or -1
+                )
         logger.debug(f"[CoinMarketCap] Additional Info Extracted: {coin_info}")
         return coin_info
