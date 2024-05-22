@@ -19,9 +19,11 @@ class Portfolio(Report):
         exchanges: List[str] = ["all"],
         networks: List[str] = ["all"],
         include_manual: bool = False,
+        raw: bool = False
     ) -> None:
         super().__init__(exchanges, networks, include_manual)
         self.coin_market_cap = CoinMarketCap()
+        self.raw_format = raw
 
     def get_balances_from_exchanges(self) -> List[Tuple]:
         """Gets the balances from all the configured exchanges.
@@ -126,6 +128,59 @@ class Portfolio(Report):
             "portfolio_percentage": "Portfolio Percentage",
         }
 
+    def write_csv_report(self, report_pdf: pd.DataFrame, path: Path) -> None:
+        curr_date = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        output_file_name = f"crypto_portfolio_report_{curr_date}.csv"
+
+        logger.info(f"Writing report to {path / output_file_name}...")
+        report_pdf.to_csv(
+            path / output_file_name,
+            index=False,
+            float_format="{:f}".format,
+            encoding="utf-8",
+        )
+        logger.info(f"Report generated successfully: {path / output_file_name}")
+    
+    def write_excel_report(self, report_pdf: pd.DataFrame, path: Path) -> None:
+        curr_date = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_file_name = f"crypto_portfolio_report_{curr_date}.xlsx"
+
+        writer = pd.ExcelWriter(path / output_file_name, engine='xlsxwriter')
+        report_pdf.to_excel(writer, sheet_name='Portfolio', index=False, header=True)
+        workbook  = writer.book
+        worksheet = writer.sheets['Portfolio']
+
+        # Set column widths to be equal to longest value
+        for idx, col in enumerate(report_pdf):  # loop through all columns
+            series = report_pdf[col]
+            max_len = max(
+                (
+                    series.astype(str).map(len).max(),  # len of largest item
+                    len(str(series.name))  # len of column name/header
+                )
+            ) + 3  # adding a little extra space
+            worksheet.set_column(idx, idx, max_len)  # set column width
+        
+        # Format the headers
+        headers = report_pdf.columns
+        header_format = workbook.add_format(
+            {
+                "bold": True,
+                "text_wrap": True,
+                "valign": "top",
+                "font_color": "white",
+                "fg_color": "#30353D",
+                "border": 1,
+            }
+        )
+        worksheet.set_row(0, None, header_format)
+
+        # Close the Pandas Excel writer and output the Excel file.
+        writer.close()
+        logger.info(f"Report generated successfully: {path / output_file_name}")
+
+
     def report(self):
         # Extract all the balances from the exchanges and networks
         exchange_balances = self.get_balances_from_exchanges()
@@ -159,18 +214,10 @@ class Portfolio(Report):
         report_pdf.reset_index(inplace=True)
         report_pdf = report_pdf.rename(columns=self.get_rename_map())
 
-        # Write out the CSV file
+        # Write out Excel file (formatted) or CSV file (raw)
         output_dir = Path("reports/portfolio")
         output_dir.mkdir(parents=True, exist_ok=True)
-
-        curr_date = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_file_name = f"crypto_portfolio_report_{curr_date}.csv"
-
-        logger.info(f"Writing report to {output_dir / output_file_name}...")
-        report_pdf.to_csv(
-            output_dir / output_file_name,
-            index=False,
-            float_format="{:f}".format,
-            encoding="utf-8",
-        )
-        logger.info(f"Report generated successfully: {output_dir / output_file_name}")
+        if self.raw_format:
+            self.write_csv_report(report_pdf=report_pdf, path=output_dir)
+        else:
+            self.write_excel_report(report_pdf=report_pdf, path=output_dir)

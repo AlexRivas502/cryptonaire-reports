@@ -38,6 +38,12 @@ def crypto_report():
     help="""Includes the balances of a CSV file located in CSV_PATH.""",
 )
 @click.option(
+    "--csv",
+    is_flag=True,
+    default=False,
+    help="""If set, returns the raw report format rather than the formatted XLSX""",
+)
+@click.option(
     "--debug",
     is_flag=True,
     default=False,
@@ -45,12 +51,12 @@ def crypto_report():
     generates a report with the information from all available exchanges (Binance,
     BingX, Gate and ByBit)""",
 )
-def portfolio(networks: str, exchanges: str, include_manual: bool, debug: bool):
+def portfolio(networks: str, exchanges: str, include_manual: bool, csv: bool, debug: bool):
     LoggerConfig(log_level="debug" if debug else "info")
     exchanges = parse_exchanges(exchanges) if exchanges else []
     networks = parse_networks(networks) if networks else []
     portfolio = Portfolio(
-        exchanges=exchanges, networks=networks, include_manual=include_manual
+        exchanges=exchanges, networks=networks, include_manual=include_manual, raw=csv
     )
     portfolio.report()
 
