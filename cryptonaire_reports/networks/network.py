@@ -38,5 +38,5 @@ class Network:
         pass
 
     @abc.abstractmethod
-    def get_balances(self) -> Tuple[str, float]:
+    def get_balances(self) -> Tuple[str, str, float]:
         raise NotImplementedError

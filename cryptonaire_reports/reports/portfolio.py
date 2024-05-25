@@ -46,7 +46,7 @@ class Portfolio(Report):
             logger.info(
                 f"[{exchange.name.upper()}] Data collection completed successfully"
             )
-            balances.extend([(exchange.name, *balance) for balance in exchange_balance])
+            balances.extend(exchange_balance)
         return balances
 
     def get_balances_from_networks(self) -> List[Tuple]:
@@ -69,7 +69,7 @@ class Portfolio(Report):
             logger.info(
                 f"[{network.name.upper()}] Data collection completed successfully"
             )
-            balances.extend([(network.name, *balance) for balance in network_balance])
+            balances.extend(network_balance)
         return balances
 
     def get_balances_from_manual_file(self) -> List[Tuple]:
@@ -141,7 +141,7 @@ class Portfolio(Report):
             encoding="utf-8",
         )
         logger.info(f"Report generated successfully: {path / output_file_name}")
-    
+
     def write_excel_report(self, report_pdf: pd.DataFrame, path: Path) -> None:
         curr_date = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_file_name = f"crypto_portfolio_report_{curr_date}.xlsx"
@@ -161,7 +161,7 @@ class Portfolio(Report):
                 )
             ) + 3  # adding a little extra space
             worksheet.set_column(idx, idx, max_len)  # set column width
-        
+
         # Format the headers
         headers = report_pdf.columns
         header_format = workbook.add_format(
@@ -169,8 +169,8 @@ class Portfolio(Report):
                 "bold": True,
                 "text_wrap": True,
                 "valign": "top",
-                "font_color": "white",
-                "fg_color": "#30353D",
+                # "font_color": "white",
+                # "fg_color": "#30353D",
                 "border": 1,
             }
         )
@@ -179,7 +179,6 @@ class Portfolio(Report):
         # Close the Pandas Excel writer and output the Excel file.
         writer.close()
         logger.info(f"Report generated successfully: {path / output_file_name}")
-
 
     def report(self):
         # Extract all the balances from the exchanges and networks

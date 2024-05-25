@@ -47,8 +47,9 @@ class BingX(Exchange, metaclass=Singleton):
         response = requests.request(method, url, headers=headers, data=payload)
         return json.loads(response.text)
 
-    def get_spot_balances(self) -> List[Tuple[str, float]]:
+    def get_spot_balances(self) -> List[Tuple[str, str, float]]:
         logger.info(f"[{self.name.upper()}] Extracting balances from Spot account...")
+        source_name = "BingX (Spot)"
         spot_balances = []
         spot_acc_balance = self._api_request(
             endpoint="/openApi/spot/v1/account/balance"
@@ -58,18 +59,18 @@ class BingX(Exchange, metaclass=Singleton):
             balance = float(coin_asset["free"]) + float(coin_asset["locked"])
             if not balance > 0:
                 continue
-            spot_balances.append((coin_ticker, balance))
+            spot_balances.append((source_name, coin_ticker, balance))
         logger.debug(f"[{self.name.upper()}] Spot balances: \n{spot_balances}")
         return spot_balances
 
-    def get_wealth_balances(self) -> List[Tuple[str, float, float]]:
+    def get_wealth_balances(self) -> List[Tuple[str, str, float]]:
         logger.warning(
             f"[{self.name.upper()}] BingX doesn't provide wealth balances yet. That information "
             "must be entered manually until the API enables wealth balances."
         )
         return []
 
-    def get_balances(self) -> List[Tuple[str, float, float]]:
+    def get_balances(self) -> List[Tuple[str, str, float]]:
         balances = []
         balances.extend(self.get_spot_balances())
         balances.extend(self.get_wealth_balances())

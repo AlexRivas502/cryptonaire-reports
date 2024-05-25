@@ -18,18 +18,19 @@ class Ethereum(Network):
     def name(self) -> str:
         return "Ethereum"
 
-    def get_eth_mainnet_balances(self) -> List[Tuple[str, float]]:
+    def get_eth_mainnet_balances(self) -> List[Tuple[str, str, float]]:
         logger.info(
             f"[{self.name.upper()}] Extracting balances from Ethereum Mainnet..."
         )
         mainnet_balances = []
         for address in self._addresses:
+            source_name = f"Ethereum ({address})"
             address_info = requests.get(
                 f"{API_URL}/getAddressInfo/{address}?apiKey=freekey"
             ).json()
             # Extract ETH Balance
             eth_balance = address_info["ETH"]["balance"]
-            mainnet_balances.append(("ETH", eth_balance))
+            mainnet_balances.append((source_name, "ETH", eth_balance))
             # Extract additional tokens balance
             for token in address_info["tokens"]:
                 symbol = token["tokenInfo"]["symbol"]
@@ -37,13 +38,13 @@ class Ethereum(Network):
                 decimal_position = token["tokenInfo"]["decimals"]
                 divider = float("1e+" + decimal_position)
                 balance = exploded_balance / divider
-                mainnet_balances.append((symbol, balance))
+                mainnet_balances.append((source_name, symbol, balance))
         logger.debug(
             f"[{self.name.upper()}] Ethereum Mainnet balances: \n{mainnet_balances}"
         )
         return mainnet_balances
 
-    def get_balances(self) -> List[Tuple[str, float]]:
+    def get_balances(self) -> List[Tuple[str, str, float]]:
         balances = []
         balances.extend(self.get_eth_mainnet_balances())
         logger.info(f"[{self.name.upper()}] All balances extracted successfully")

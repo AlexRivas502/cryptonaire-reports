@@ -21,8 +21,9 @@ class Binance(Exchange, metaclass=Singleton):
     def name(self) -> str:
         return "Binance"
 
-    def get_spot_balances(self) -> List[Tuple[str, float]]:
+    def get_spot_balances(self) -> List[Tuple[str, str, float]]:
         logger.info(f"[{self.name.upper()}] Extracting balances from Spot account...")
+        source_name = "Binance (Spot)"
         spot_balances = []
         for coin_asset in self.client.account(recvWindow=30000)["balances"]:
             coin_ticker = symbol_corrector(coin_asset["asset"])
@@ -32,14 +33,15 @@ class Binance(Exchange, metaclass=Singleton):
             balance = float(coin_asset["free"]) + float(coin_asset["locked"])
             if not balance > 0:
                 continue
-            spot_balances.append((coin_ticker, balance))
+            spot_balances.append((source_name, coin_ticker, balance))
         logger.debug(f"[{self.name.upper()}] Spot balances: \n{spot_balances}")
         return spot_balances
 
-    def get_earn_flexible_balances(self) -> List[Tuple[str, float]]:
+    def get_earn_flexible_balances(self) -> List[Tuple[str, str, float]]:
         logger.info(
             f"[{self.name.upper()}] Extracting balances from Flexible Earn account..."
         )
+        source_name = "Binance (Flexible Earn)"
         earn_balances = []
         for product in self.client.get_flexible_product_position(recvWindow=30000)[
             "rows"
@@ -48,14 +50,15 @@ class Binance(Exchange, metaclass=Singleton):
             balance = float(product["totalAmount"])
             if not balance > 0:
                 continue
-            earn_balances.append((coin_ticker, balance))
+            earn_balances.append((source_name, coin_ticker, balance))
         logger.debug(f"[{self.name.upper()}] Flexible Earn balances: \n{earn_balances}")
         return earn_balances
 
-    def get_earn_locked_balances(self) -> List[Tuple[str, float]]:
+    def get_earn_locked_balances(self) -> List[Tuple[str, str, float]]:
         logger.info(
             f"[{self.name.upper()}] Extracting balances from Locked Earn account..."
         )
+        source_name = "Binance (Locked Earn)"
         earn_balances = []
         for product in self.client.get_locked_product_position(recvWindow=30000)[
             "rows"
@@ -64,11 +67,11 @@ class Binance(Exchange, metaclass=Singleton):
             balance = float(product["amount"])
             if not balance > 0:
                 continue
-            earn_balances.append((coin_ticker, balance))
+            earn_balances.append((source_name, coin_ticker, balance))
         logger.debug(f"[{self.name.upper()}] Locked Earn balances: \n{earn_balances}")
         return earn_balances
 
-    def get_balances(self) -> List[Tuple[str, float]]:
+    def get_balances(self) -> List[Tuple[str, str, float]]:
         balances = []
         balances.extend(self.get_spot_balances())
         balances.extend(self.get_earn_flexible_balances())
