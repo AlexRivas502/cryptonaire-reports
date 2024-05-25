@@ -31,6 +31,16 @@ class CoinMarketCap(metaclass=Singleton):
             exit(1)
 
     def extract_cryptocurrency_map_from_api(self, coin_list: Set[str]) -> List[Dict]:
+        """Calls the cryptocurrency_map endpoint from CoinMarketCap API and retrieves
+        the cryptocurrency map for each of the coins in coin_list. If the call isn't
+        successfull, it retries or fails depending on the error code.
+
+        Args:
+            coin_list (Set[str]): List of coins to look for.
+
+        Returns:
+            List[Dict]: List that contains the cryptocurrency map for all coins
+        """
         try:
             coin_market_cap_map_response: Response = self.api.cryptocurrency_map(
                 symbol=",".join(coin_list)
@@ -70,6 +80,7 @@ class CoinMarketCap(metaclass=Singleton):
                     return batch_responses
 
             elif error_response.error_code in [401, 403]:
+                # Forbidden or unauthorized access
                 logger.error(
                     f"[CoinMarketCap] Failed to retrieve info from API. Access to the "
                     f"cryptocurrency map is forbidden or unauthorized"
@@ -90,6 +101,7 @@ class CoinMarketCap(metaclass=Singleton):
                 )
                 exit(1)
             else:
+                # Unknown error
                 logger.error(
                     f"[CoinMarketCap] Unknown error happened. Please create an issue "
                     f"in the Github project to solve this problem. Include the "
