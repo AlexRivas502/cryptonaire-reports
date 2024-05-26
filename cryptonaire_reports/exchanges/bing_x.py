@@ -51,17 +51,25 @@ class BingX(Exchange, metaclass=Singleton):
         logger.info(f"[{self.name.upper()}] Extracting balances from Spot account...")
         source_name = "BingX (Spot)"
         spot_balances = []
-        spot_acc_balance = self._api_request(
-            endpoint="/openApi/spot/v1/account/balance"
-        )
-        for coin_asset in spot_acc_balance["data"]["balances"]:
-            coin_ticker = symbol_corrector(coin_asset["asset"])
-            balance = float(coin_asset["free"]) + float(coin_asset["locked"])
-            if not balance > 0:
-                continue
-            spot_balances.append((source_name, coin_ticker, balance))
-        logger.debug(f"[{self.name.upper()}] Spot balances: \n{spot_balances}")
-        return spot_balances
+        try:
+            spot_acc_balance = self._api_request(
+                endpoint="/openApi/spot/v1/account/balance"
+            )
+            logger.debug(f"[{self.name.upper()}] Full response: {spot_acc_balance}")
+            for coin_asset in spot_acc_balance["data"]["balances"]:
+                coin_ticker = symbol_corrector(coin_asset["asset"])
+                balance = float(coin_asset["free"]) + float(coin_asset["locked"])
+                if not balance > 0:
+                    continue
+                spot_balances.append((source_name, coin_ticker, balance))
+            logger.debug(f"[{self.name.upper()}] Spot balances: \n{spot_balances}")
+            return spot_balances
+        except Exception as e:
+            logger.error(
+                f"[{self.name.upper()}] Error while retrieving spot balances from {self.name.upper()}"
+            )
+            logger.debug(f"[{self.name.upper()}] Full exception: {e}")
+            return []
 
     def get_wealth_balances(self) -> List[Tuple[str, str, float]]:
         logger.warning(

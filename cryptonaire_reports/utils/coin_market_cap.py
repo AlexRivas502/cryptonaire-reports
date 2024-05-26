@@ -50,7 +50,7 @@ class CoinMarketCap(metaclass=Singleton):
                 f"{','.join(coin_list)} successfully extracted from API"
             )
             logger.debug(
-                f"[CoinMarketCap] Full repsonse: {coin_market_cap_map_response}"
+                f"[CoinMarketCap] Full response: {coin_market_cap_map_response}"
             )
             return coin_market_cap_map_response.data
         except CoinMarketCapAPIError as e:
@@ -109,6 +109,56 @@ class CoinMarketCap(metaclass=Singleton):
                 )
                 exit(1)
 
+    def extract_quotes_latest_from_api(self, id: str) -> List[Dict]:
+        """Calls the cryptocurrency_quotes_latest endpoint from CoinMarketCap API and
+        retrieves the latest price data from a given coin.
+
+        Args:
+            coin_list (Set[str]): CoinMarketCap coin id
+
+        Returns:
+            List[Dict]: Price info for the requested id
+        """
+        try:
+            latest_quote = self.api.cryptocurrency_quotes_latest(id=id).data.get(id)
+            return latest_quote
+        except CoinMarketCapAPIError as e:
+            error_response: Response = e.rep
+            logger.debug(f"[CoinMarketCap] Full error: {error_response}")
+            if error_response.error_code == 400:
+                # Bad request, coin not found.
+                logger.error(f"[CoinMarketCap] Latest quote not found for {id}")
+                return []
+            elif error_response.error_code in [401, 403]:
+                # Forbidden or unauthorized access
+                logger.error(
+                    f"[CoinMarketCap] Failed to retrieve info from API. Access to the "
+                    f"cryptocurrency map is forbidden or unauthorized"
+                )
+                exit(1)
+            elif error_response.error_code in [429, 1008]:
+                # Request limit reached
+                logger.warning(
+                    f"[CoinMarketCap] API limit reached. Waiting 60 seconds to resume..."
+                )
+                time.sleep(61)
+                return self.extract_quotes_latest_from_api(id=id)
+            elif error_response.error_code == 500:
+                # Internal server error
+                logger.error(
+                    f"[CoinMarketCap] There is a problem with the CoinMarketCap API. "
+                    f"Please try again later"
+                )
+                exit(1)
+            else:
+                # Unknown error
+                logger.error(
+                    f"[CoinMarketCap] Unknown error happened. Please create an issue "
+                    f"in the Github project to solve this problem. Include the "
+                    f"following in your request: {error_response}"
+                )
+                exit(1)
+
     def get_coin_info(self, coin_list: Set[str]) -> List[Dict]:
         """Given a list of coins / ticker symbols, extracts additional information
         using the CoinMarketCap API.
@@ -142,29 +192,12 @@ class CoinMarketCap(metaclass=Singleton):
             logger.info(
                 f"[CoinMarketCap] Basic information found for: {', '.join(coin_list)}"
             )
-
-        for symbol, info in coin_info.items():
-            logger.info(f"[CoinMarketCap] Extracting latest price of {symbol}...")
-            try:
-                latest_quote = self.api.cryptocurrency_quotes_latest(
-                    id=info["id"]
-                ).data.get(str(info["id"]))
-            except CoinMarketCapAPIError:
-                logger.warning(
-                    f"[CoinMarketCap] API limit reached. Waiting 60 seconds to reset..."
-                )
-                time.sleep(61)
-                try:
-                    latest_quote = self.api.cryptocurrency_quotes_latest(
-                        id=info["id"]
-                    ).data.get(str(info["id"]))
-                except:
-                    logger.error(f"[CoinMarketCap] Price data not found for: {symbol}")
-                    latest_quote = None
-
+        for symbol, crypto_map in coin_info.items():
+            latest_quote = self.extract_quotes_latest_from_api(id=str(crypto_map["id"]))
             if not latest_quote:
-                logger.warning(f"[CoinMarketCap] Price data not found for: {symbol}")
+                logger.warning(f"[CoinMarketCap] Price data not found for {symbol}")
             else:
+                logger.info(f"[CoinMarketCap] Price data found for {symbol}")
                 coin_info[symbol]["price_usd"] = float(
                     latest_quote.get("quote").get("USD").get("price")
                 )

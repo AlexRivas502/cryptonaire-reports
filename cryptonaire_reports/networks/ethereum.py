@@ -23,26 +23,33 @@ class Ethereum(Network):
             f"[{self.name.upper()}] Extracting balances from Ethereum Mainnet..."
         )
         mainnet_balances = []
-        for address in self._addresses:
-            source_name = f"Ethereum ({address})"
-            address_info = requests.get(
-                f"{API_URL}/getAddressInfo/{address}?apiKey=freekey"
-            ).json()
-            # Extract ETH Balance
-            eth_balance = address_info["ETH"]["balance"]
-            mainnet_balances.append((source_name, "ETH", eth_balance))
-            # Extract additional tokens balance
-            for token in address_info["tokens"]:
-                symbol = token["tokenInfo"]["symbol"]
-                exploded_balance = int(token["balance"])
-                decimal_position = token["tokenInfo"]["decimals"]
-                divider = float("1e+" + decimal_position)
-                balance = exploded_balance / divider
-                mainnet_balances.append((source_name, symbol, balance))
-        logger.debug(
-            f"[{self.name.upper()}] Ethereum Mainnet balances: \n{mainnet_balances}"
-        )
-        return mainnet_balances
+        try:
+            for address in self._addresses:
+                source_name = f"Ethereum Wallet"
+                address_info = requests.get(
+                    f"{API_URL}/getAddressInfo/{address}?apiKey=freekey"
+                ).json()
+                # Extract ETH Balance
+                eth_balance = address_info["ETH"]["balance"]
+                mainnet_balances.append((source_name, "ETH", eth_balance))
+                # Extract additional tokens balance
+                for token in address_info["tokens"]:
+                    symbol = token["tokenInfo"]["symbol"]
+                    exploded_balance = int(token["balance"])
+                    decimal_position = token["tokenInfo"]["decimals"]
+                    divider = float("1e+" + decimal_position)
+                    balance = exploded_balance / divider
+                    mainnet_balances.append((source_name, symbol, balance))
+            logger.debug(
+                f"[{self.name.upper()}] Ethereum Mainnet balances: \n{mainnet_balances}"
+            )
+            return mainnet_balances
+        except Exception as e:
+            logger.error(
+                f"[{self.name.upper()}] Error while retrieving balances from {self.name.upper()}"
+            )
+            logger.debug(f"[{self.name.upper()}] Full exception: {e}")
+            return []
 
     def get_balances(self) -> List[Tuple[str, str, float]]:
         balances = []

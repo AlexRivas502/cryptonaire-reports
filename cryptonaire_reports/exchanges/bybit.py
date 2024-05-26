@@ -27,17 +27,29 @@ class ByBit(Exchange, metaclass=Singleton):
         logger.info(f"[{self.name.upper()}] Extracting balances from Spot account...")
         source_name = "ByBit (Unified Trading)"
         spot_balances = []
-        unified_account_wallet = self.client.get_wallet_balance(accountType="UNIFIED")
-        for coin_asset in unified_account_wallet["result"]["list"][0]["coin"]:
-            coin_ticker = symbol_corrector(coin_asset["coin"])
-            balance = float(coin_asset["equity"])
-            if not balance > 0:
-                continue
-            spot_balances.append((source_name, coin_ticker, balance))
-        logger.debug(
-            f"[{self.name.upper()}] Unified trading balances: \n{spot_balances}"
-        )
-        return spot_balances
+        try:
+            unified_account_wallet = self.client.get_wallet_balance(
+                accountType="UNIFIED"
+            )
+            logger.debug(
+                f"[{self.name.upper()}] Full response: {unified_account_wallet}"
+            )
+            for coin_asset in unified_account_wallet["result"]["list"][0]["coin"]:
+                coin_ticker = symbol_corrector(coin_asset["coin"])
+                balance = float(coin_asset["equity"])
+                if not balance > 0:
+                    continue
+                spot_balances.append((source_name, coin_ticker, balance))
+            logger.debug(
+                f"[{self.name.upper()}] Unified trading balances: \n{spot_balances}"
+            )
+            return spot_balances
+        except Exception as e:
+            logger.error(
+                f"[{self.name.upper()}] Error while retrieving unified trading balances from {self.name.upper()}"
+            )
+            logger.debug(f"[{self.name.upper()}] Full exception: {e}")
+            return []
 
     def get_balances(self) -> List[Tuple[str, str, float]]:
         balances = []

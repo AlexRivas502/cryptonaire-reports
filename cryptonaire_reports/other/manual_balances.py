@@ -1,4 +1,3 @@
-import csv
 from configparser import ConfigParser
 from typing import Tuple, List
 
@@ -42,7 +41,14 @@ class ManualBalances:
         return "Manual"
 
     def get_balances(self) -> List[Tuple[str, float]]:
-        balances_pdf = pd.read_csv(self.csv_file_path)
-        balances = list(balances_pdf.itertuples(index=False, name=None))
-        logger.info(f"[{self.name.upper()}] All balances extracted successfully")
-        return balances
+        try:
+            balances_pdf = pd.read_csv(self.csv_file_path)
+            balances = list(balances_pdf.itertuples(index=False, name=None))
+            logger.info(f"[{self.name.upper()}] All balances extracted successfully")
+            return balances
+        except Exception as e:
+            logger.error(
+                f"[{self.name.upper()}] Error while retrieving manual balances from {self.csv_file_path}"
+            )
+            logger.debug(f"[{self.name.upper()}] Full exception: {e}")
+            return []
