@@ -65,8 +65,21 @@ class Binance(Exchange, metaclass=Singleton):
         source_name = "Binance (Flexible Earn)"
         earn_balances = []
         try:
-            response = self.spot_client.get_flexible_product_position(recvWindow=30000)
-            logger.debug(f"[{self.name.upper()}] Full response: {response}")
+            all_products = []
+            retrieved_all = False
+            while not retrieved_all:
+                response = self.spot_client.get_flexible_product_position(
+                    recvWindow=30000, size=100
+                )
+                all_products.extend(response["rows"])
+                total_expected = response["total"]
+                if total_expected == len(all_products):
+                    retrieved_all = True
+                    logger.info(
+                        f"[{self.name.upper()}] Retrieved {total_expected} products "
+                        f"from flexible earn"
+                    )
+            logger.debug(f"[{self.name.upper()}] Full response: {all_products}")
             for product in response["rows"]:
                 coin_ticker = symbol_corrector(product["asset"])
                 balance = float(product["totalAmount"])
@@ -91,9 +104,22 @@ class Binance(Exchange, metaclass=Singleton):
         source_name = "Binance (Locked Earn)"
         earn_balances = []
         try:
-            response = self.spot_client.get_locked_product_position(recvWindow=30000)
-            logger.debug(f"[{self.name.upper()}] Full response: {response}")
-            for product in response["rows"]:
+            all_products = []
+            retrieved_all = False
+            while not retrieved_all:
+                response = self.spot_client.get_locked_product_position(
+                    recvWindow=30000, size=100
+                )
+                all_products.extend(response["rows"])
+                total_expected = response["total"]
+                if total_expected == len(all_products):
+                    retrieved_all = True
+                    logger.info(
+                        f"[{self.name.upper()}] Retrieved {total_expected} products "
+                        f"from locked earn"
+                    )
+            logger.debug(f"[{self.name.upper()}] Full response: {all_products}")
+            for product in all_products:
                 coin_ticker = symbol_corrector(product["asset"])
                 balance = float(product["amount"])
                 if not balance > 0:
