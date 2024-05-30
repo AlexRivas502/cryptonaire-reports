@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cryptonaire-reports"
-version = "0.1.0.alpha6"
+version = "0.1.0.alpha7"
 description = "Centralized reports for your crypto assets in multiple exchanges and wallets"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -25,7 +25,8 @@ dependencies = [
   "pybit==5.7.0",
   "gate-api==4.70.0",
   "python-coinmarketcap==0.5",
-  "XlsxWriter==3.2.0"
+  "XlsxWriter==3.2.0",
+  "dexscreener",
 ]
 [project.urls]
 "Homepage" = "https://github.com/AlexRivas502/cryptonaire-reports"

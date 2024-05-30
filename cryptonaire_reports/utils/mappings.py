@@ -3,6 +3,7 @@ from cryptonaire_reports.exchanges.bing_x import BingX
 from cryptonaire_reports.exchanges.bybit import ByBit
 from cryptonaire_reports.exchanges.gate import Gate
 from cryptonaire_reports.networks.ethereum import Ethereum
+from cryptonaire_reports.networks.solana import Solana
 
 EXCHANGE_MAP = {
     Binance: ["binance"],
@@ -13,4 +14,5 @@ EXCHANGE_MAP = {
 
 NETWORKS_MAP = {
     Ethereum: ["ethereum", "eth"],
+    Solana: ["sol", "solana"],
 }

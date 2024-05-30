@@ -18,7 +18,7 @@ def parse_exchanges(exchanges_input: str) -> Set[str]:
                 not_supported.append(exchange)
         logger.error(
             f"The following exchange codes are not supported: {','.join(not_supported)}.\n"
-            f"\t\t\t\tCurrently supported exchanges are {', '.join(SUPPORTED_EXCHANGES)}.\n"
+            f"\t\t\t\tCurrently supported exchanges are {', '.join(EXCHANGE_MAP)}.\n"
             f"\t\t\t\tPlease use one of the following: {', '.join(flat_list)}."
         )
         exit(1)
