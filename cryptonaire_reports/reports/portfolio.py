@@ -106,9 +106,11 @@ class Portfolio(Report):
         result = {}
         result["source"] = "|".join(set(row["source"]))
         result["balance"] = row["balance"].sum()
+        result["price_backup"] = row["price_backup"].max()
+        result["market_cap_backup"] = row["market_cap_backup"].max()
         return pd.Series(
             result,
-            index=["source", "balance"],
+            index=["source", "balance", "price_backup", "market_cap_backup"],
         )
 
     @staticmethod
@@ -188,9 +190,14 @@ class Portfolio(Report):
         balances = exchange_balances + network_balances + manual_balances
         balances_pdf = pd.DataFrame(
             balances,
-            columns=["source", "symbol", "balance"],
+            columns=[
+                "source",
+                "symbol",
+                "balance",
+                "price_backup",
+                "market_cap_backup",
+            ],
         )
-
         # Group by ticker symbol and sum the balances
         groupped_balances_pdf = balances_pdf.groupby(by=["symbol"]).apply(
             self.combine_balances
@@ -204,6 +211,19 @@ class Portfolio(Report):
 
         # Join the balances with the additional info and calculate total value and percentage
         report_pdf = groupped_balances_pdf.join(coin_info_pdf)
+        # Some balances have price and market cap info
+        report_pdf["price_usd"] = (
+            report_pdf[["price_usd", "price_backup"]]
+            .bfill(
+                axis=1,
+            )
+            .iloc[:, 0]
+        )
+        report_pdf["market_cap"] = (
+            report_pdf[["market_cap", "market_cap_backup"]].bfill(axis=1).iloc[:, 0]
+        )
+        report_pdf.drop(["price_backup", "market_cap_backup"], axis=1, inplace=True)
+        # Calculate total value and percentage
         report_pdf["total_value_usd"] = report_pdf["balance"] * report_pdf["price_usd"]
         report_pdf["portfolio_percentage"] = report_pdf[["total_value_usd"]].apply(
             lambda x: x / x.sum()

@@ -74,7 +74,7 @@ class Report:
                     if network in network_keys:
                         network_instance = network_class()
                         if network_instance.active:
-                            self.exchanges.append(network_instance)
+                            self.networks.append(network_instance)
                         else:
                             logger.warning(
                                 f"Network {network} was not found in "
