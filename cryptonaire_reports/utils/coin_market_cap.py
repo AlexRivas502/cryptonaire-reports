@@ -75,7 +75,6 @@ class CoinMarketCap(metaclass=Singleton):
                         res = self.extract_cryptocurrency_map_from_api(
                             coin_list={symbol}
                         )
-                        print(res)
                         batch_responses.extend(res)
                     return batch_responses
 

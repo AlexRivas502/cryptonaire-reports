@@ -39,7 +39,8 @@ class Ethereum(Network):
                     decimal_position = token["tokenInfo"]["decimals"]
                     divider = float("1e+" + decimal_position)
                     balance = exploded_balance / divider
-                    mainnet_balances.append((source_name, symbol, balance))
+                    # Last two elements are backup price and backup market cap
+                    mainnet_balances.append((source_name, symbol, balance, 0, 0))
             logger.debug(
                 f"[{self.name.upper()}] Ethereum Mainnet balances: \n{mainnet_balances}"
             )
@@ -51,7 +52,7 @@ class Ethereum(Network):
             logger.debug(f"[{self.name.upper()}] Full exception: {e}")
             return []
 
-    def get_balances(self) -> List[Tuple[str, str, float]]:
+    def get_balances(self) -> List[Tuple[str, str, float, float, float]]:
         balances = []
         balances.extend(self.get_eth_mainnet_balances())
         logger.info(f"[{self.name.upper()}] All balances extracted successfully")

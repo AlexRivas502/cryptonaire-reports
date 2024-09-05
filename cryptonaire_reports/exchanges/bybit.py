@@ -23,7 +23,9 @@ class ByBit(Exchange, metaclass=Singleton):
     def name(self) -> str:
         return "ByBit"
 
-    def get_unified_trading_balances(self) -> List[Tuple[str, str, float]]:
+    def get_unified_trading_balances(
+        self,
+    ) -> List[Tuple[str, str, float, float, float]]:
         logger.info(f"[{self.name.upper()}] Extracting balances from Spot account...")
         source_name = "ByBit (Unified Trading)"
         spot_balances = []
@@ -39,7 +41,8 @@ class ByBit(Exchange, metaclass=Singleton):
                 balance = float(coin_asset["equity"])
                 if not balance > 0:
                     continue
-                spot_balances.append((source_name, coin_ticker, balance))
+                # Last two elements are backup price and backup market cap
+                spot_balances.append((source_name, coin_ticker, balance, 0, 0))
             logger.debug(
                 f"[{self.name.upper()}] Unified trading balances: \n{spot_balances}"
             )
@@ -51,7 +54,7 @@ class ByBit(Exchange, metaclass=Singleton):
             logger.debug(f"[{self.name.upper()}] Full exception: {e}")
             return []
 
-    def get_balances(self) -> List[Tuple[str, str, float]]:
+    def get_balances(self) -> List[Tuple[str, str, float, float, float]]:
         balances = []
         balances.extend(self.get_unified_trading_balances())
         logger.info(f"[{self.name.upper()}] All balances extracted successfully")
