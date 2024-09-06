@@ -18,8 +18,8 @@ def crypto_report():
     type=str,
     default=None,
     help="""Networks from which we want to extract balances from (Currently supports:
-    Ethereum). Defaults to None. If set to all, it generates a report with all avaiable 
-    networks in the config file""",
+    Ethereum, Solana). Defaults to None. If set to all, it generates a report with all 
+    avaiable networks in the config file""",
 )
 @click.option(
     "--exchanges",
@@ -28,7 +28,7 @@ def crypto_report():
     default=None,
     help="""Exchanges to extract the information from. Defaults to None. If set to all, 
     it generates a report with the information from all available exchanges (Binance,
-    BingX, Gate and ByBit)""",
+    BingX, Coinbase, ByBit and Gate)""",
 )
 @click.option(
     "--include-manual",
