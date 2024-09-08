@@ -61,7 +61,7 @@ Make sure to include all the API keys from the exchanges you want to read from. 
 ## Portfolio Report
 You can get your total number of assets across all exchanges by running the following:
 ```bash
-crypto-report portfolio --exchanges <all|binance|bing_x|bybit|coinbase|gate> --networks <all|ethereum|solana> [--csv]
+crypto-report portfolio --exchanges <all|binance|bing_x|bybit|coinbase|gate> --networks <all|ethereum|solana> [--include-manual] [--csv]
 ```
 
 If you select `all`, it will generate a report based on all the exchanges you have configured

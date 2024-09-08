@@ -242,7 +242,7 @@ class Portfolio(Report):
                 },
             }
         )
-        chart.set_style(2)
+        chart.set_style(18)
         chart.set_size({'width': 1080, 'height': 1080})
 
         # Add a title.
