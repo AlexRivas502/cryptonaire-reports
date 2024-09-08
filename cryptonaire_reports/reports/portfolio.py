@@ -151,10 +151,10 @@ class Portfolio(Report):
         curr_date = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_file_name = f"crypto_portfolio_report_{curr_date}.xlsx"
 
-        # Set up the sheet
+        ##### GENERATE XLSX FILE WITH XLSXWRITER #####
         # Skip the header to be able to create a custom header format instead of using
         # the pandas default one
-        writer = pd.ExcelWriter(path / output_file_name, engine='xlsxwriter')
+        writer = pd.ExcelWriter(path=path / output_file_name, engine='xlsxwriter')
         report_pdf.to_excel(
             writer, 
             sheet_name='Portfolio', 
@@ -195,6 +195,7 @@ class Portfolio(Report):
             }
         )
 
+        column_lengths = []
         for idx, column in enumerate(columns_format):
             series = report_pdf[column]
             format = workbook.add_format({**columns_format[column], **global_format})
@@ -207,12 +208,13 @@ class Portfolio(Report):
                 )
                 + 7  # adding a little extra space
             )
+            column_lengths.append(max_len)
             worksheet.set_column(idx, idx, max_len, format)
 
             # Write the header
             worksheet.write(0, idx, column, header_format)
 
-        # Generate the doughnut chart
+        # Generate the pie chart
         chart = workbook.add_chart({"type": "pie"})
 
         # Configure the series
@@ -236,9 +238,10 @@ class Portfolio(Report):
         chart.set_size({'width': 1080, 'height': 1080})
 
         # Add a title.
+        total_usd = '${:0,.2f}'.format(report_pdf["Total Value (USD)"].sum())
         chart.set_title(
             {
-                "name": f"Crypto Portfolio - {datetime.now().strftime("%Y/%m/%d")}",
+                "name": f"Crypto Portfolio - {datetime.now().strftime("%Y/%m/%d")}\nTotal value: {total_usd}",
                 "name_font": {
                     "name": "Avenir Next LT Pro",
                 },
@@ -258,16 +261,10 @@ class Portfolio(Report):
             {"x_offset": 0, "y_offset": 0}
         )
 
-        # Insert the white circle to convert the chart into a doughnut chart
-        worksheet.insert_image(
-            f"B{total_rows + 3}", 
-            "resources/assets/white_circle.png", 
-            {"x_offset": 50, "y_offset": 50, "x_scale": 2, "y_scale": 2}
-        )
-
         # Close the Pandas Excel writer and output the Excel file.
         writer.close()
         writer.handles = None
+
         logger.info(f"Report generated successfully: {path / output_file_name}")
 
     def report(self):
