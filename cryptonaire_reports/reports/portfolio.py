@@ -151,11 +151,19 @@ class Portfolio(Report):
         curr_date = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_file_name = f"crypto_portfolio_report_{curr_date}.xlsx"
 
+        # Remove all the tokens that have less than $1
+        report_pdf = report_pdf[report_pdf["Total Value (USD)"] >= 1.00]
+        excluded_tokens = report_pdf[report_pdf["Total Value (USD)"] < 1.00]["Symbol"].unique()
+        logger.info(
+            f"Excluding tokens {','.join(excluded_tokens)} from report since their "
+            f"balance is less than $1.00"
+        )
+
         ##### GENERATE XLSX FILE WITH XLSXWRITER #####
         # Skip the header to be able to create a custom header format instead of using
         # the pandas default one
         writer = pd.ExcelWriter(path=path / output_file_name, engine='xlsxwriter')
-        report_pdf.to_excel(
+        report_pdf.sort_values(by=["Total Value (USD)"]).to_excel(
             writer, 
             sheet_name='Portfolio', 
             startrow=1, 
