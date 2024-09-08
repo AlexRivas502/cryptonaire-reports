@@ -30,7 +30,7 @@ class Gate(Exchange, metaclass=Singleton):
     def name(self) -> str:
         return "Gate"
 
-    def get_spot_balances(self) -> List[Tuple[str, str, float]]:
+    def get_spot_balances(self) -> List[Tuple[str, str, float, float, float]]:
         """Extracts the balance from the spot account on Gate.io
 
         Returns:
@@ -45,10 +45,15 @@ class Gate(Exchange, metaclass=Singleton):
             logger.debug(f"[{self.name.upper()}] Full response: {response}")
             for coin_asset in response:
                 coin_ticker = symbol_corrector(coin_asset.currency)
+
+                if coin_ticker in self.token_ignore_list:
+                    continue
+
                 balance = float(coin_asset.available) + float(coin_asset.locked)
                 if not balance > 0:
                     continue
-                spot_balances.append((source_name, coin_ticker, balance))
+                # Last two elements are backup price and backup market cap
+                spot_balances.append((source_name, coin_ticker, balance, 0, 0))
             logger.debug(f"[{self.name.upper()}] Spot balances: \n{spot_balances}")
             return spot_balances
         except Exception as e:
@@ -58,7 +63,7 @@ class Gate(Exchange, metaclass=Singleton):
             logger.debug(f"[{self.name.upper()}] Full exception: {e}")
             return []
 
-    def get_earn_balances(self) -> List[Tuple[str, str, float]]:
+    def get_earn_balances(self) -> List[Tuple[str, str, float, float, float]]:
         logger.info(f"[{self.name.upper()}] Extracting balances from Earn account...")
         source_name = "Gate (Earn)"
         earn_balances = []
@@ -68,10 +73,15 @@ class Gate(Exchange, metaclass=Singleton):
             logger.debug(f"[{self.name.upper()}] Full response: {response}")
             for earn_lend in response:
                 coin_ticker = symbol_corrector(earn_lend.currency)
+
+                if coin_ticker in self.token_ignore_list:
+                    continue
+
                 balance = float(earn_lend.amount)
                 if not balance > 0:
                     continue
-                earn_balances.append((source_name, coin_ticker, balance))
+                # Last two elements are backup price and backup market cap
+                earn_balances.append((source_name, coin_ticker, balance, 0, 0))
             logger.debug(f"[{self.name.upper()}] Earn balances: \n{earn_balances}")
             return earn_balances
         except Exception as e:
@@ -81,7 +91,7 @@ class Gate(Exchange, metaclass=Singleton):
             logger.debug(f"[{self.name.upper()}] Full exception: {e}")
             return []
 
-    def get_balances(self) -> List[Tuple[str, str, float]]:
+    def get_balances(self) -> List[Tuple[str, str, float, float, float]]:
         """Extracts the balances from the following accounts in gate.io:
         - Spot
 

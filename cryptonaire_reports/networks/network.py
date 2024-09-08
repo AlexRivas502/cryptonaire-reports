@@ -33,6 +33,18 @@ class Network:
             logger.warning(f"No addresses found for {network}, skipping network")
             self.active = False
 
+        try:
+            self.token_ignore_list = config.get(
+                "Ignore Tokens", network.upper()
+            ).split(",")
+            logger.info(
+                f"Token ignore list for {network}: "
+                f"{",".join(self.token_ignore_list)}"
+            )
+        except:
+            self.token_ignore_list = []
+            logger.debug(f"Token ignore list is empty for {network}")
+
     @property
     def name(self) -> str:
         pass

@@ -25,7 +25,7 @@ class Portfolio(Report):
         self.coin_market_cap = CoinMarketCap()
         self.raw_format = raw
 
-    def get_balances_from_exchanges(self) -> List[Tuple]:
+    def get_balances_from_exchanges(self) -> List[Tuple[str, str, float, float, float]]:
         """Gets the balances from all the configured exchanges.
         If you've got one coin across different exchanges, there will be one row per
         exchange. If you've got one coin across different wallets within an exchange
@@ -49,7 +49,7 @@ class Portfolio(Report):
             balances.extend(exchange_balance)
         return balances
 
-    def get_balances_from_networks(self) -> List[Tuple]:
+    def get_balances_from_networks(self) -> List[Tuple[str, str, float, float, float]]:
         """Gets the balances from all the configured networks.
         If you've got one coin across different networks, there will be one row per
         network.
@@ -72,7 +72,9 @@ class Portfolio(Report):
             balances.extend(network_balance)
         return balances
 
-    def get_balances_from_manual_file(self) -> List[Tuple]:
+    def get_balances_from_manual_file(
+        self,
+    ) -> List[Tuple[str, str, float, float, float]]:
         if not self.manual:
             return []
         balances = self.manual.get_balances()
@@ -106,9 +108,11 @@ class Portfolio(Report):
         result = {}
         result["source"] = "|".join(set(row["source"]))
         result["balance"] = row["balance"].sum()
+        result["price_backup"] = row["price_backup"].max()
+        result["market_cap_backup"] = row["market_cap_backup"].max()
         return pd.Series(
             result,
-            index=["source", "balance"],
+            index=["source", "balance", "price_backup", "market_cap_backup"],
         )
 
     @staticmethod
@@ -143,41 +147,132 @@ class Portfolio(Report):
         logger.info(f"Report generated successfully: {path / output_file_name}")
 
     def write_excel_report(self, report_pdf: pd.DataFrame, path: Path) -> None:
+        logger.info(f"Generating XLSX report")
         curr_date = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_file_name = f"crypto_portfolio_report_{curr_date}.xlsx"
 
-        writer = pd.ExcelWriter(path / output_file_name, engine='xlsxwriter')
-        report_pdf.to_excel(writer, sheet_name='Portfolio', index=False, header=True)
+        # Remove all the tokens that have less than $1
+        report_pdf = report_pdf[report_pdf["Total Value (USD)"] >= 1.00]
+        excluded_tokens = report_pdf[report_pdf["Total Value (USD)"] < 1.00]["Symbol"].unique()
+        logger.info(
+            f"Excluding tokens {','.join(excluded_tokens)} from report since their "
+            f"balance is less than $1.00"
+        )
+
+        ##### GENERATE XLSX FILE WITH XLSXWRITER #####
+        # Skip the header to be able to create a custom header format instead of using
+        # the pandas default one
+        writer = pd.ExcelWriter(path=path / output_file_name, engine='xlsxwriter')
+        report_pdf.sort_values(by=["Total Value (USD)"]).to_excel(
+            writer, 
+            sheet_name='Portfolio', 
+            startrow=1, 
+            index=False, 
+            header=False
+        )
         workbook  = writer.book
         worksheet = writer.sheets['Portfolio']
+        total_rows = report_pdf.shape[0]
+        total_cols = report_pdf.shape[1]
 
-        # Set column widths to be equal to longest value
-        for idx, col in enumerate(report_pdf):  # loop through all columns
-            series = report_pdf[col]
-            max_len = max(
-                (
-                    series.astype(str).map(len).max(),  # len of largest item
-                    len(str(series.name))  # len of column name/header
-                )
-            ) + 3  # adding a little extra space
-            worksheet.set_column(idx, idx, max_len)  # set column width
-
-        # Format the headers
-        headers = report_pdf.columns
+        # Format the data
+        columns_format = {
+            "Symbol": {"align": "center", "bold": "True"},
+            "Exchange(s) / Network(s)": {},
+            "Balance": {"num_format": "#,##0.00000000"},
+            "id": {"align": "center"},
+            "Full Name": {"align": "left"},
+            "Coin Rank": {"num_format": "#,##0", "align": "center"},
+            "Price (USD)": {"num_format": "$#,##0.0000"},
+            "Max Supply": {"num_format": "#,##0"},
+            "Circulating Supply": {"num_format": "#,##0"},
+            "Total Supply": {"num_format": "#,##0"},
+            "Market Cap": {"num_format": "$#,##0"},
+            "Total Value (USD)": {"num_format": "$#,##0.00"},
+            "Portfolio Percentage": {"num_format": "0.00%", "align": "center"},
+        }
+        global_format = {"font_name": "Avenir Next LT Pro"}
         header_format = workbook.add_format(
             {
-                "bold": True,
-                "text_wrap": True,
-                "valign": "top",
-                # "font_color": "white",
-                # "fg_color": "#30353D",
+                "font_name": "Avenir Next LT Pro",
+                "align": "center",
+                "bold": "True", 
                 "border": 1,
+                "font_color": "white",
+                "fg_color": "#30353D",
             }
         )
-        worksheet.set_row(0, None, header_format)
+
+        column_lengths = []
+        for idx, column in enumerate(columns_format):
+            series = report_pdf[column]
+            format = workbook.add_format({**columns_format[column], **global_format})
+            max_len = (
+                max(
+                    (
+                        series.astype(str).map(len).max(),  # len of largest item
+                        len(str(series.name)),  # len of column name/header
+                    )
+                )
+                + 7  # adding a little extra space
+            )
+            column_lengths.append(max_len)
+            worksheet.set_column(idx, idx, max_len, format)
+
+            # Write the header
+            worksheet.write(0, idx, column, header_format)
+
+        # Generate the pie chart
+        chart = workbook.add_chart({"type": "pie"})
+
+        # Configure the series
+        chart.add_series(
+            {
+                "name": "Cryptocurrency Percentage",
+                "categories": f"=Portfolio!$A$2:$A${total_rows + 1}",
+                "values": f"=Portfolio!$L$2:$L${total_rows + 1}",
+                "data_labels": {
+                    "value": True,
+                    "category": True,
+                    "percentage": True,
+                    "separator": '\n',
+                    "num_format": "0.00%",
+                    "position": "outside_end",
+                    "font": {"name": "Avenir Next LT Pro"},
+                },
+            }
+        )
+        chart.set_style(2)
+        chart.set_size({'width': 1080, 'height': 1080})
+
+        # Add a title.
+        total_usd = '${:0,.2f}'.format(report_pdf["Total Value (USD)"].sum())
+        chart.set_title(
+            {
+                "name": f"Crypto Portfolio - {datetime.now().strftime("%Y/%m/%d")}\nTotal value: {total_usd}",
+                "name_font": {
+                    "name": "Avenir Next LT Pro",
+                },
+            }
+        )
+
+        # Turn off the chart border.
+        chart.set_chartarea({'border': {'none': True}})
+
+        # Turn off the chart legend.
+        chart.set_legend({"none": True})
+
+        # Insert the chart into the worksheet (with an offset).
+        worksheet.insert_chart(
+            f"B{total_rows + 3}", 
+            chart, 
+            {"x_offset": 0, "y_offset": 0}
+        )
 
         # Close the Pandas Excel writer and output the Excel file.
         writer.close()
+        writer.handles = None
+
         logger.info(f"Report generated successfully: {path / output_file_name}")
 
     def report(self):
@@ -188,9 +283,14 @@ class Portfolio(Report):
         balances = exchange_balances + network_balances + manual_balances
         balances_pdf = pd.DataFrame(
             balances,
-            columns=["source", "symbol", "balance"],
+            columns=[
+                "source",
+                "symbol",
+                "balance",
+                "price_backup",
+                "market_cap_backup",
+            ],
         )
-
         # Group by ticker symbol and sum the balances
         groupped_balances_pdf = balances_pdf.groupby(by=["symbol"]).apply(
             self.combine_balances
@@ -204,6 +304,19 @@ class Portfolio(Report):
 
         # Join the balances with the additional info and calculate total value and percentage
         report_pdf = groupped_balances_pdf.join(coin_info_pdf)
+        # Some balances have price and market cap info
+        report_pdf["price_usd"] = (
+            report_pdf[["price_usd", "price_backup"]]
+            .bfill(
+                axis=1,
+            )
+            .iloc[:, 0]
+        )
+        report_pdf["market_cap"] = (
+            report_pdf[["market_cap", "market_cap_backup"]].bfill(axis=1).iloc[:, 0]
+        )
+        report_pdf.drop(["price_backup", "market_cap_backup"], axis=1, inplace=True)
+        # Calculate total value and percentage
         report_pdf["total_value_usd"] = report_pdf["balance"] * report_pdf["price_usd"]
         report_pdf["portfolio_percentage"] = report_pdf[["total_value_usd"]].apply(
             lambda x: x / x.sum()

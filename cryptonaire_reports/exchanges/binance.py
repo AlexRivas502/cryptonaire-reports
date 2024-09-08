@@ -27,7 +27,7 @@ class Binance(Exchange, metaclass=Singleton):
     def name(self) -> str:
         return "Binance"
 
-    def get_spot_balances(self) -> List[Tuple[str, str, float]]:
+    def get_spot_balances(self) -> List[Tuple[str, str, float, float, float]]:
         logger.info(f"[{self.name.upper()}] Extracting balances from Spot account...")
         source_name = "Binance (Spot)"
         spot_balances = []
@@ -38,6 +38,10 @@ class Binance(Exchange, metaclass=Singleton):
             logger.debug(f"[{self.name.upper()}] Full response: {response}")
             for coin_asset in response["balances"]:
                 coin_ticker = symbol_corrector(coin_asset["asset"])
+
+                if coin_ticker in self.token_ignore_list:
+                    continue
+
                 if coin_ticker.startswith("LD") and len(coin_ticker) > 4:
                     # This value corresponds to a coin that's stored in Earn - Flexible
                     logger.debug(
@@ -48,7 +52,8 @@ class Binance(Exchange, metaclass=Singleton):
                 balance = float(coin_asset["free"]) + float(coin_asset["locked"])
                 if not balance > 0:
                     continue
-                spot_balances.append((source_name, coin_ticker, balance))
+                # Last two elements are backup price and backup market cap
+                spot_balances.append((source_name, coin_ticker, balance, 0, 0))
             logger.debug(f"[{self.name.upper()}] Spot balances: \n{spot_balances}")
             return spot_balances
         except Exception as e:
@@ -58,7 +63,7 @@ class Binance(Exchange, metaclass=Singleton):
             logger.debug(f"[{self.name.upper()}] Full exception: {e}")
             return []
 
-    def get_earn_flexible_balances(self) -> List[Tuple[str, str, float]]:
+    def get_earn_flexible_balances(self) -> List[Tuple[str, str, float, float, float]]:
         logger.info(
             f"[{self.name.upper()}] Extracting balances from flexible earn account..."
         )
@@ -82,10 +87,15 @@ class Binance(Exchange, metaclass=Singleton):
             logger.debug(f"[{self.name.upper()}] Full response: {all_products}")
             for product in response["rows"]:
                 coin_ticker = symbol_corrector(product["asset"])
+
+                if coin_ticker in self.token_ignore_list:
+                    continue
+
                 balance = float(product["totalAmount"])
                 if not balance > 0:
                     continue
-                earn_balances.append((source_name, coin_ticker, balance))
+                # Last two elements are backup price and backup market cap
+                earn_balances.append((source_name, coin_ticker, balance, 0, 0))
             logger.debug(
                 f"[{self.name.upper()}] Flexible Earn balances: \n{earn_balances}"
             )
@@ -97,7 +107,7 @@ class Binance(Exchange, metaclass=Singleton):
             logger.debug(f"[{self.name.upper()}] Full exception: {e}")
             return []
 
-    def get_earn_locked_balances(self) -> List[Tuple[str, str, float]]:
+    def get_earn_locked_balances(self) -> List[Tuple[str, str, float, float, float]]:
         logger.info(
             f"[{self.name.upper()}] Extracting balances from locked earn account..."
         )
@@ -121,10 +131,14 @@ class Binance(Exchange, metaclass=Singleton):
             logger.debug(f"[{self.name.upper()}] Full response: {all_products}")
             for product in all_products:
                 coin_ticker = symbol_corrector(product["asset"])
+
+                if coin_ticker in self.token_ignore_list:
+                    continue
+
                 balance = float(product["amount"])
                 if not balance > 0:
                     continue
-                earn_balances.append((source_name, coin_ticker, balance))
+                earn_balances.append((source_name, coin_ticker, balance, 0, 0))
             logger.debug(
                 f"[{self.name.upper()}] Locked Earn balances: \n{earn_balances}"
             )
@@ -136,7 +150,7 @@ class Binance(Exchange, metaclass=Singleton):
             logger.debug(f"[{self.name.upper()}] Full exception: {e}")
             return []
 
-    def get_balances(self) -> List[Tuple[str, str, float]]:
+    def get_balances(self) -> List[Tuple[str, str, float, float, float]]:
         balances = []
         balances.extend(self.get_spot_balances())
         balances.extend(self.get_earn_flexible_balances())
