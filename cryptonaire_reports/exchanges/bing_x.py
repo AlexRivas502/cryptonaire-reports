@@ -58,6 +58,10 @@ class BingX(Exchange, metaclass=Singleton):
             logger.debug(f"[{self.name.upper()}] Full response: {spot_acc_balance}")
             for coin_asset in spot_acc_balance["data"]["balances"]:
                 coin_ticker = symbol_corrector(coin_asset["asset"])
+
+                if coin_ticker in self.token_ignore_list:
+                    continue
+
                 balance = float(coin_asset["free"]) + float(coin_asset["locked"])
                 if not balance > 0:
                     continue

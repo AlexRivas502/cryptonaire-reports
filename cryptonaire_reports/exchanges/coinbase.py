@@ -34,6 +34,10 @@ class Coinbase(Exchange, metaclass=Singleton):
                 available = account["available_balance"]
                 hold = account["hold"]
                 coin_ticker = symbol_corrector(available["currency"])
+
+                if coin_ticker in self.token_ignore_list:
+                    continue
+
                 balance = float(available["value"]) + float(hold["value"])
                 if not balance > 0:
                     continue

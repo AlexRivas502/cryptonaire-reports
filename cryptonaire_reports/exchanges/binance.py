@@ -38,6 +38,10 @@ class Binance(Exchange, metaclass=Singleton):
             logger.debug(f"[{self.name.upper()}] Full response: {response}")
             for coin_asset in response["balances"]:
                 coin_ticker = symbol_corrector(coin_asset["asset"])
+
+                if coin_ticker in self.token_ignore_list:
+                    continue
+
                 if coin_ticker.startswith("LD") and len(coin_ticker) > 4:
                     # This value corresponds to a coin that's stored in Earn - Flexible
                     logger.debug(
@@ -83,6 +87,10 @@ class Binance(Exchange, metaclass=Singleton):
             logger.debug(f"[{self.name.upper()}] Full response: {all_products}")
             for product in response["rows"]:
                 coin_ticker = symbol_corrector(product["asset"])
+
+                if coin_ticker in self.token_ignore_list:
+                    continue
+
                 balance = float(product["totalAmount"])
                 if not balance > 0:
                     continue
@@ -123,6 +131,10 @@ class Binance(Exchange, metaclass=Singleton):
             logger.debug(f"[{self.name.upper()}] Full response: {all_products}")
             for product in all_products:
                 coin_ticker = symbol_corrector(product["asset"])
+
+                if coin_ticker in self.token_ignore_list:
+                    continue
+
                 balance = float(product["amount"])
                 if not balance > 0:
                     continue

@@ -47,7 +47,8 @@ class Solana(Network):
                 response = requests.post(API_URL, json=payload).json()
                 # Value is in lamports, which is one billionth of a SOL
                 sol_balance = float(response["result"]["value"]) * 0.000000001
-                sol_balances.append((source_name, "SOL", sol_balance))
+                if symbol not in self.token_ignore_list:
+                    sol_balances.append((source_name, "SOL", sol_balance, 0, 0))
 
                 # Tokens Balance
                 payload = {
@@ -104,9 +105,12 @@ class Solana(Network):
                     # We have access to market information in the same call
                     price_usd = token_pair.price_usd
                     market_cap = token_pair.fdv
-                    mint_balances.append(
-                        (source_name, symbol, balance, price_usd, market_cap)
-                    )
+
+                    if symbol not in self.token_ignore_list:
+                        mint_balances.append(
+                            (source_name, symbol, balance, price_usd, market_cap)
+                        )
+
             logger.debug(
                 f"[{self.name.upper()}] Solana mint balances: \n{str(mint_balances)}"
             )

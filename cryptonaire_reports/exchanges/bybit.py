@@ -38,6 +38,10 @@ class ByBit(Exchange, metaclass=Singleton):
             )
             for coin_asset in unified_account_wallet["result"]["list"][0]["coin"]:
                 coin_ticker = symbol_corrector(coin_asset["coin"])
+
+                if coin_ticker in self.token_ignore_list:
+                    continue
+
                 balance = float(coin_asset["equity"])
                 if not balance > 0:
                     continue

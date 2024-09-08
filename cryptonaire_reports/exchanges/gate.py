@@ -45,6 +45,10 @@ class Gate(Exchange, metaclass=Singleton):
             logger.debug(f"[{self.name.upper()}] Full response: {response}")
             for coin_asset in response:
                 coin_ticker = symbol_corrector(coin_asset.currency)
+
+                if coin_ticker in self.token_ignore_list:
+                    continue
+
                 balance = float(coin_asset.available) + float(coin_asset.locked)
                 if not balance > 0:
                     continue
@@ -69,6 +73,10 @@ class Gate(Exchange, metaclass=Singleton):
             logger.debug(f"[{self.name.upper()}] Full response: {response}")
             for earn_lend in response:
                 coin_ticker = symbol_corrector(earn_lend.currency)
+
+                if coin_ticker in self.token_ignore_list:
+                    continue
+
                 balance = float(earn_lend.amount)
                 if not balance > 0:
                     continue
