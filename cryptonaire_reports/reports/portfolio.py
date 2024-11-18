@@ -1,4 +1,5 @@
-from typing import List, Dict, Set, Tuple
+import os.path
+from typing import List, Dict, Set, Tuple, Any
 from datetime import datetime
 from pathlib import Path
 
@@ -6,6 +7,7 @@ import structlog
 import pandas as pd
 from cryptonaire_reports.reports.report import Report
 from cryptonaire_reports.utils.coin_market_cap import CoinMarketCap
+from cryptonaire_reports.utils.reports import num_to_excel_col, add_market_cap_classification
 
 pd.options.display.float_format = "{:.2f}".format
 
@@ -118,16 +120,19 @@ class Portfolio(Report):
     @staticmethod
     def get_rename_map() -> Dict[str, str]:
         return {
-            "source": "Exchange(s) / Network(s)",
             "symbol": "Symbol",
-            "name": "Full Name",
-            "rank": "Coin Rank",
-            "market_cap": "Market Cap",
-            "max_supply": "Max Supply",
-            "total_supply": "Total Supply",
-            "circulating_supply": "Circulating Supply",
+            "source": "Exchange(s) / Network(s)",
             "balance": "Balance",
+            "id": "ID",
+            "name": "Full Name",
+            "category": "Category",
+            "rank": "Coin Rank",
             "price_usd": "Price (USD)",
+            "max_supply": "Max Supply",
+            "circulating_supply": "Circulating Supply",
+            "total_supply": "Total Supply",
+            "market_cap": "Market Cap",
+            "market_cap_class": "Market Cap Class",
             "total_value_usd": "Total Value (USD)",
             "portfolio_percentage": "Portfolio Percentage",
         }
@@ -146,6 +151,69 @@ class Portfolio(Report):
         )
         logger.info(f"Report generated successfully: {path / output_file_name}")
 
+    @staticmethod
+    def insert_chart(
+        workbook: Any, 
+        worksheet: Dict[str, Any], 
+        report_pdf: pd.DataFrame,
+        title: str,
+        categories_range: str,
+        values_range: str,
+        row_offset: int = 3,
+        col_offset: int = 2,
+        width: int = 1150,
+        height: int = 1150,
+        style: int = 18
+    ) -> None:
+
+        # Generate the pie chart
+        chart = workbook.add_chart({"type": "pie"})
+
+        # Configure the series
+        chart.add_series(
+            {
+                "name": "Cryptocurrency Percentage",
+                "categories": categories_range,
+                "values": values_range,
+                "data_labels": {
+                    "value": True,
+                    "category": True,
+                    "percentage": True,
+                    "separator": '\n',
+                    "num_format": "0.00%",
+                    "position": "outside_end",
+                    "font": {"name": "Avenir Next LT Pro"},
+                },
+            }
+        )
+        chart.set_style(style)
+        chart.set_size({'width': width, 'height': height})
+
+        chart.set_title(
+            {
+                "name": title,
+                "name_font": {
+                    "name": "Avenir Next LT Pro",
+                },
+            }
+        )
+
+        # Turn off the chart border.
+        chart.set_chartarea({'border': {'none': True}})
+
+        # Turn off the chart legend.
+        chart.set_legend({"none": True})
+
+        # Insert the chart into the worksheet (with an offset).
+        total_rows = report_pdf.shape[0]
+        col = num_to_excel_col(col_offset)
+        row = total_rows + row_offset
+        worksheet.insert_chart(
+            f"{col}{row}", 
+            chart, 
+            {"x_offset": 0, "y_offset": 0}
+        )
+
     def write_excel_report(self, report_pdf: pd.DataFrame, path: Path) -> None:
         logger.info(f"Generating XLSX report")
         curr_date = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -163,7 +231,7 @@ class Portfolio(Report):
         # Skip the header to be able to create a custom header format instead of using
         # the pandas default one
         writer = pd.ExcelWriter(path=path / output_file_name, engine='xlsxwriter')
-        report_pdf.sort_values(by=["Total Value (USD)"]).to_excel(
+        report_pdf.sort_values(by=["Total Value (USD)"], ascending=False).to_excel(
             writer, 
             sheet_name='Portfolio', 
             startrow=1, 
@@ -180,14 +248,16 @@ class Portfolio(Report):
             "Symbol": {"align": "center", "bold": "True"},
             "Exchange(s) / Network(s)": {},
             "Balance": {"num_format": "#,##0.00000000"},
-            "id": {"align": "center"},
+            "ID": {"align": "center"},
             "Full Name": {"align": "left"},
+            "Category": {"align": "left"},
             "Coin Rank": {"num_format": "#,##0", "align": "center"},
             "Price (USD)": {"num_format": "$#,##0.0000"},
             "Max Supply": {"num_format": "#,##0"},
             "Circulating Supply": {"num_format": "#,##0"},
             "Total Supply": {"num_format": "#,##0"},
             "Market Cap": {"num_format": "$#,##0"},
+            "Market Cap Class": {"align": "left"},
             "Total Value (USD)": {"num_format": "$#,##0.00"},
             "Portfolio Percentage": {"num_format": "0.00%", "align": "center"},
         }
@@ -222,51 +292,46 @@ class Portfolio(Report):
             # Write the header
             worksheet.write(0, idx, column, header_format)
 
-        # Generate the pie chart
-        chart = workbook.add_chart({"type": "pie"})
-
-        # Configure the series
-        chart.add_series(
-            {
-                "name": "Cryptocurrency Percentage",
-                "categories": f"=Portfolio!$A$2:$A${total_rows + 1}",
-                "values": f"=Portfolio!$L$2:$L${total_rows + 1}",
-                "data_labels": {
-                    "value": True,
-                    "category": True,
-                    "percentage": True,
-                    "separator": '\n',
-                    "num_format": "0.00%",
-                    "position": "outside_end",
-                    "font": {"name": "Avenir Next LT Pro"},
-                },
-            }
-        )
-        chart.set_style(18)
-        chart.set_size({'width': 1080, 'height': 1080})
-
-        # Add a title.
+        # ---------------------- PORTFOLIO DISTRIBUTION CHART --------------------------
         total_usd = '${:0,.2f}'.format(report_pdf["Total Value (USD)"].sum())
-        chart.set_title(
-            {
-                "name": f"Crypto Portfolio - {datetime.now().strftime("%Y/%m/%d")}\nTotal value: {total_usd}",
-                "name_font": {
-                    "name": "Avenir Next LT Pro",
-                },
-            }
+        total_rows = report_pdf.shape[0]
+        self.insert_chart(
+            workbook=workbook, 
+            worksheet=worksheet, 
+            report_pdf=report_pdf,
+            title=f"Crypto Portfolio - {datetime.now().strftime("%Y/%m/%d")}\nTotal value: {total_usd}",
+            categories_range=f"=Portfolio!$A$2:$A${total_rows + 1}",
+            values_range=f"=Portfolio!$N$2:$N${total_rows + 1}",
         )
 
-        # Turn off the chart border.
-        chart.set_chartarea({'border': {'none': True}})
+        # ---------------------------- TOKEN CATEGORY CHART ----------------------------
+        self.insert_chart(
+            workbook=workbook, 
+            worksheet=worksheet, 
+            report_pdf=report_pdf,
+            title=f"Distribution by Category",
+            categories_range=f"=Portfolio!$A$2:$A${total_rows + 1}",
+            values_range=f"=Portfolio!$N$2:$N${total_rows + 1}",
+            row_offset=3,
+            col_offset=10,
+            width=800,
+            height=580,
+            style=22
+        )
 
-        # Turn off the chart legend.
-        chart.set_legend({"none": True})
-
-        # Insert the chart into the worksheet (with an offset).
-        worksheet.insert_chart(
-            f"B{total_rows + 3}", 
-            chart, 
-            {"x_offset": 0, "y_offset": 0}
+        # ------------------------------ TOKEN RISK CHART ------------------------------
+        self.insert_chart(
+            workbook=workbook, 
+            worksheet=worksheet, 
+            report_pdf=report_pdf,
+            title=f"Distribution by Market Cap",
+            categories_range=f"=Portfolio!$A$2:$A${total_rows + 1}",
+            values_range=f"=Portfolio!$N$2:$N${total_rows + 1}",
+            row_offset=32,
+            col_offset=10,
+            width=800,
+            height=580,
+            style=23
         )
 
         # Close the Pandas Excel writer and output the Excel file.
@@ -322,8 +387,34 @@ class Portfolio(Report):
             lambda x: x / x.sum()
         )
 
-        # Rename columns to a more readable format
+        # Add category value if token_categories.csv file is available
+        token_category_file = "token_categories.csv"
+        if os.path.isfile(token_category_file):
+            logger.info("Category file found. Adding category info")
+            categories_pdf = pd.read_csv(token_category_file).set_index("symbol")
+            report_pdf = report_pdf.join(categories_pdf, on="symbol")
+            report_pdf["category"] = report_pdf["category"].fillna(value="Unknown")
+        
+        else:
+            logger.info("Category file not found. Skipping category info")
+            report_pdf["category"] = "Unknown"
+
+        # Add risk level if market_cap_thresholds.csv file is available
+        market_cap_thresholds_file = "market_cap_thresholds.csv"
+        if os.path.isfile(market_cap_thresholds_file):
+            logger.info("Market cap thresholds file found. Adding classification info")
+            risk_pdf = pd.read_csv(market_cap_thresholds_file)
+            risk_levels = list(zip(*risk_pdf.values.T))
+            report_pdf["market_cap_class"] = report_pdf.apply(add_market_cap_classification, risk_levels=risk_levels, axis=1)
+        else:
+            logger.info("Market cap thresholds file not found. Skipping classification info")
+            report_pdf["market_cap_class"] = "Unknown"
+
+        
+
+        # Reorder and rename columns to a more readable format
         report_pdf.reset_index(inplace=True)
+        report_pdf = report_pdf[list(self.get_rename_map().keys())]
         report_pdf = report_pdf.rename(columns=self.get_rename_map())
 
         # Write out Excel file (formatted) or CSV file (raw)
